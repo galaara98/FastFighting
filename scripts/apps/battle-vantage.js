@@ -30,6 +30,8 @@ import { mountNetwork } from "./battle-network.js";
 import { listenMenus } from "./menus.js";
 import { wheelSideways } from "./sideways.js";
 import { blink, keepTyping } from "./blink.js";
+import { readOnly } from "./read-only.js";
+import { inControl } from "../foundry/control.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import { showSheet, panToToken, tokenHudAt } from "../foundry/sheet-tools.js";
@@ -44,6 +46,9 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
 const has = key => game.i18n.has(key);
+
+/** The actions a read-only Battle Vantage still has (read-only.js): looking. */
+const VANTAGE_LOOKS = Object.freeze(["sideTab", "focusCreature", "panToken"]);
 /** An engine condition in words: the system's own (its helper's conditionLabel), else the core's, else its key. */
 const conditionWords = (adapter, key) => adapter?.conditionLabel?.(key) || (has(`FASTFIGHTING.Condition.${key}`) ? loc(`FASTFIGHTING.Condition.${key}`) : key);
 
@@ -427,6 +432,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     const b = BattleVantage.shown();
     this.#restoreDraft(b);
     this.#mount(b, options?.parts?.includes("net") ?? true);
+    // (Another GM in control: read only, with Take Control.)
+    readOnly(this, { looks: VANTAGE_LOOKS });
   }
 
   /**
@@ -1303,8 +1310,9 @@ export function registerBattleVantage() {
     soon = setTimeout(() => BattleVantage.refresh(), 250);
   };
   for ( const hook of ["updateCombat", "updateActor", "updateToken"] ) Hooks.on(hook, later);
-  // (A GM come or gone: whose browser plays the battle may have changed, playedElsewhere.)
+  // (A GM come or gone, or control handed over: whose browser plays the battle may have changed, playedElsewhere.)
   Hooks.on("userConnected", later);
+  Hooks.on("fastFighting.control", later);
   // (Rewound to before it began, with the window open: made ready again, as the planner left it.)
   Hooks.on("fastFighting.encounterRewound", combat => {
     if ( foundry.applications.instances.get("fast-fighting-battle") ) prepareVantage(combat);
@@ -1331,7 +1339,7 @@ export function registerBattleVantage() {
   const bound = () => new Set(["networkRaise", "networkLower"].flatMap(n => game.keybindings.get(MODULE_ID, n) ?? []).map(b => b.key));
   window.addEventListener("keydown", event => {
     const app = foundry.applications.instances.get("fast-fighting-battle");
-    if ( !game.user?.isGM || !app?.hovering || event.isComposing ) return;
+    if ( !inControl() || !app?.hovering || event.isComposing ) return;
     if ( event.target?.closest?.("input, textarea, select, [contenteditable]") ) return;
     if ( event.key === "Delete" || event.key === "Backspace" ) {
       event.preventDefault();

@@ -39,6 +39,8 @@ import { BattleVantage } from "./battle-vantage.js";
 import { listenMenus } from "./menus.js";
 import { FOE_ENDS } from "../engine/aggregate.js";
 import { blink, keepTyping } from "./blink.js";
+import { readOnly } from "./read-only.js";
+import { inControl } from "../foundry/control.js";
 import { expectedRuns, paceOf, swingBudgetMs, budgetMs, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { swingPreview, SWING_THRESHOLD } from "../engine/swing-stats.js";
 import { signedNumber } from "../engine/trait-parts.js";
@@ -50,6 +52,9 @@ const FUDGE_PARTIAL = `modules/${MODULE_ID}/templates/partials/fudge.hbs`;
 const TACTICS_PARTIAL = `modules/${MODULE_ID}/templates/partials/tactics.hbs`;
 
 const SIDE_ORDER = [SIDES.FRIENDLY, SIDES.HOSTILE, SIDES.NEUTRAL, SIDES.SECRET];
+
+/** The actions a read-only planner still has (read-only.js): looking, and predictions, which change nothing. */
+const PLANNER_LOOKS = Object.freeze(["leftView", "sideFilter", "showTeam", "showCreature", "toggleTeam", "resultTab", "panToken", "run", "cancel", "refresh", "swing", "swingScope"]);
 /** Each side's color, for its swatch (the color of its first team). */
 const SIDE_SWATCH = { friendly: "F", hostile: "H1", neutral: "N1", secret: "S" };
 const LEFT_VIEWS = ["teams", "encounter", "players"];
@@ -432,7 +437,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     for ( const e of this.roster ) tokenSetup(this.setup, e.token.id);
     proposeNeutralGroups(this.roster, this.setup); // friend groups for the neutrals, as the map stands now
     // A new plan, or one just cleared: who commands each group, picked once (after that, only the GM changes it).
-    if ( !this.setup.commandSeeded && this.roster.length && game.user.isGM ) {
+    if ( !this.setup.commandSeeded && this.roster.length && inControl() ) {
       seedCommand(this.roster, this.setup);
       await saveSetup(this.setup, this.holder);
     }
@@ -1520,6 +1525,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       ui.combat?.render();
     }
     this.#filterRoster();
+    // (Another GM in control: read only, with Take Control. Running a prediction changes nothing, so it's left.)
+    readOnly(this, { looks: PLANNER_LOOKS, fields: ".ff-roster-filter" });
   }
 
   /* -------------------------------------------- */
@@ -1847,7 +1854,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       return;
     }
     target.closest("[popover]")?.hidePopover?.();
-    if ( !this.roster?.length || !game.user.isGM ) return;
+    if ( !this.roster?.length || !inControl() ) return;
     repickCommand(this.roster, this.setup, { all });
     await saveSetup(this.setup, this.holder);
     this.stale = true;
@@ -1861,7 +1868,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
    */
   static async #onRecalcPlaystyles(event, target) {
     target.closest("[popover]")?.hidePopover?.();
-    if ( !this.roster?.length || !game.user.isGM ) return;
+    if ( !this.roster?.length || !inControl() ) return;
     // (One actor, one write: a creature many tokens share once.)
     const seen = new Set();
     let n = 0;

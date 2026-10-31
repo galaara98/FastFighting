@@ -13,6 +13,7 @@ import { setting } from "../settings.js";
 import { listAdapters } from "../api.js";
 import { CORE_API_VERSION } from "../core-api.js";
 import { encounterNumber } from "./persistence.js";
+import { inControl } from "./control.js";
 import {
   TRANSCRIPT_FOLDER, PLAN_JOURNAL, KEEP_DAYS, transcriptName, kindOf, lastKept, transcriptFor, whatGoes, plainData, contextBlock
 } from "./live-store.js";
@@ -148,11 +149,11 @@ export async function dropTranscripts(moment, combatId, battleId = null) {
 }
 
 /**
- * The active GM logs in: what goes at login (live-store.js whatGoes): troubleshooting off, every transcript whose
+ * The GM in control logs in (control.js): what goes at login (live-store.js whatGoes): troubleshooting off, every transcript whose
  * combat is gone, quietly; on, those older than KEEP_DAYS, the GM told if any went.
  */
 export async function tidyOnLogin() {
-  if ( !game.user.isActiveGM ) return;
+  if ( !inControl() ) return;
   const troubleshooting = !!setting("troubleshooting");
   const { remove } = whatGoes("login", journalFacts(), { troubleshooting, now: Date.now(), combatIds: combatsHere(), liveOn: liveBattlesHere() });
   const gone = await deleteJournals(remove.map(j => j.id));
@@ -171,7 +172,7 @@ export async function tidyOnLogin() {
  */
 export async function savePlanRun(makeRun) {
   try {
-    if ( !game.user.isGM || !setting("troubleshooting") ) return;
+    if ( !inControl() || !setting("troubleshooting") ) return;
     const at = Date.now();
     const run = plainData(makeRun()) ?? {};
     const combat = run.encounter?.id ? [run.encounter.id] : [];

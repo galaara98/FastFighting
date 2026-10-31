@@ -9,6 +9,7 @@ import { MODULE_ID, SIDES, TRAITS, clamp } from "../constants.js";
 import { setting, roundsRange } from "../settings.js";
 import { PREDICTION_SECONDS } from "../engine/run-budget.js";
 import { rememberRole } from "./command-pick.js";
+import { inControl } from "./control.js";
 
 const emptyFudge = () => Object.fromEntries(TRAITS.map(k => [k, 0]));
 
@@ -140,18 +141,18 @@ export function getSetup(holder = planHolder()) {
  * @param {string|null} role   the token's role now ("none" or null: none)
  */
 export async function rememberPartyRole(actorId, role) {
-  if ( !actorId || !game.user.isGM ) return;
+  if ( !actorId || !inControl() ) return;
   await game.settings.set(MODULE_ID, "partyCommand", rememberRole(setting("partyCommand") ?? {}, actorId, role));
 }
 
 /** Clear the plan: back to the defaults (an encounter's clears to the defaults, not to its scene's plan). */
 export async function clearSetup(holder = planHolder()) {
-  if ( !holder || !game.user.isGM ) return;
+  if ( !holder || !inControl() ) return;
   await holder.update({ [`flags.${MODULE_ID}.==setup`]: {} }, { render: false });
 }
 
 export async function saveSetup(setup, holder = planHolder()) {
-  if ( !holder || !game.user.isGM ) return;
+  if ( !holder || !inControl() ) return;
   await holder.update({ [`flags.${MODULE_ID}.==setup`]: setup }, { render: false });
   // (A scene's: signed, on this GM's own user, as it's kept: read back, on a scene a player owns, only as it was saved.)
   if ( holder.documentName === "Scene" ) await game.user.update?.({ [`flags.${MODULE_ID}.scenePlans.${holder.id}`]: planSignature(holder.getFlag(MODULE_ID, "setup")) });

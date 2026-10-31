@@ -28,10 +28,12 @@ import { registerSheetWatch } from "./foundry/sheet-watch.js";
 import { registerSheetButton } from "./foundry/sheet-button.js";
 import { BattleVantage, registerBattleVantage, prepareVantage } from "./apps/battle-vantage.js";
 import { registerTwinSessions } from "./foundry/twin-sessions.js";
+import { registerControl } from "./foundry/control.js";
 
 Hooks.once("init", () => {
   registerSettings(DefaultsConfig, GenericPathsConfig, StoryTablesConfig, LiveDataConfig);
   registerLiveBattles();
+  registerControl();
   registerBattleVantage();
   registerGroundField();
   // (Item Piles, recommended at the bottom of the settings where the system has no loot pile: foundry/loot-drop.js.)

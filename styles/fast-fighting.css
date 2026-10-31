@@ -939,3 +939,20 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 .ff-stepper { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 6px; background: var(--ff-surface-2); }
 .ff-stepper-value { min-width: 44px; font-weight: 700; text-align: center; }
 .ff-token-adhd { margin-top: 10px; }
+
+/* A Battle Planner or Battle Vantage in a GM's browser not in control of FastFighting (apps/read-only.js). */
+.ff-read-only-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 0 auto;
+  padding: 0.4rem 0.75rem;
+  margin: 0.4rem 0.6rem 0;
+  border: 1px solid var(--color-warm-2, #c9593f);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-warm-2, #c9593f) 18%, transparent);
+  font-weight: 600;
+}
+.ff-read-only-bar span { flex: 1; }
+.ff-read-only-bar .ff-take-control { flex: 0 0 auto; width: auto; white-space: nowrap; }
+.ff-read-only [aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }

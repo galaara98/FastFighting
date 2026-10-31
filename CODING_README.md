@@ -28,6 +28,14 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
 
 `foundry/live-store.js` decides (pure, tested in `tests/live-store.test.js`); `foundry/live-journals.js` finds, makes and deletes; `apps/live-data.js` is the GM's **Live battle data** menu.
 - **Transcripts:** each battle has a journal of its own, `FF_FF_LiveBattle_Transcript_<n>`, `n` the tracker's encounter number as the battle began (`encounterNumber`, 1 for a scene's only encounter). The number repeats across scenes and over time, so a taken name gets `_2`, `_3` and so on. All live in the folder `FF_FF_LiveBattle_Transcripts`, ownership None. These names are identifiers, never translated. Flags: `liveBattle` (the combat's id), `encounter` (n), `keptAt` (ms, written with every keep), and the battle in live-keeping.js's parts (`battles`, `specs`, `turns`, `snaps`, `logs`, each by combat id). A battle's transcript is found by its flags (its combat, and the battle's own id, `battles.<combat>.id`), never by its name.
+- **One GM in control** (`foundry/control.js`, the world setting `controller`): `inControl()` is the only browser that
+  plays live battles (`live-battle.js runsHere`), writes plans (`persistence.js` saveSetup, clearSetup,
+  rememberPartyRole; `ensureAutoConfig`), keeps troubleshooting runs and tidies transcripts. `controllerOf` (pure): the
+  GM named, here or not; none named, the active GM. Take Control (`takeControl`) queries the GM in control
+  (`HAND_CONTROL`, `HAND_MS`): their `onHandOver` callback keeps and lets go of the battle in the queue, then the setting
+  names the taker, whose browser picks it up. A GM in control gone `GONE_MS` (15 s) is replaced by the active GM
+  (`claimIfGone`). `fastFighting.control` fires on any change. Other GMs' planner and Battle Vantage are read only
+  (`apps/read-only.js`): a bar with Take Control, fields off, and only the actions in `PLANNER_LOOKS` / `VANTAGE_LOOKS`.
 - **Several battles at once** (Foundry runs any number of encounters, on one scene or several): a GM's browser plays
   one at a time (`live-battle.js battle`) and parks the rest. A parked battle is kept on its transcript, as a reload
   leaves it, its encounter's `live` flag still on (`liveOn(combat)`: there's a battle on it, held or parked). It's

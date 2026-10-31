@@ -23,6 +23,7 @@ import { tokenSetup, sceneEncounter } from "./persistence.js";
 import { SURPRISE } from "../engine/behavior/surprise.js";
 import { tacticsFor, isPlayerControlled, statedDesires, getStoredTactics, reactionPrefsFor } from "./tactics.js";
 import { ensureAutoConfig } from "./auto-config.js";
+import { inControl } from "./control.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting, roundsRange, rangeOf } from "../settings.js";
@@ -1035,7 +1036,7 @@ const fightRules = adapter => (setting("plannerWorkers") === false ? null : work
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
   // (Each character's calculated answers as they are now, whatever was written to its flags since the roster was read.)
-  if ( game.user.isGM ) await Promise.all(roster.map(e => ensureAutoConfig(e.token?.actor, e.spec)));
+  if ( inControl() ) await Promise.all(roster.map(e => ensureAutoConfig(e.token?.actor, e.spec)));
 
   const { spec, approach } = battleFor(roster, setup);
   const signature = battleSignature(spec);

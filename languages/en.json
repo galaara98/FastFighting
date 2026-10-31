@@ -2885,6 +2885,12 @@
       "Removed": "Deleted {n} live battle journals: {names}.",
       "Pruned": "Troubleshooting: deleted {n} live battle journals last kept more than {days} days ago."
     },
+    "Control": {
+      "ReadOnly": "{name} is in control of FastFighting. You can look here, not change anything.",
+      "Take": "Take Control",
+      "Claimed": "{name} left, so you're in control of FastFighting now.",
+      "TakenBy": "{name} took control of FastFighting."
+    },
     "Battle": {
       "Title": "Battle Vantage",
       "TitleAt": "Battle Vantage: {scene}",

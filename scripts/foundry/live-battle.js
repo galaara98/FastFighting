@@ -84,6 +84,7 @@ function systemRollKinds(adapter) {
 }
 import { isStanding, canMove, groupKeyOf, pullsThisRound, burstPoint } from "../engine/battle-state.js";
 import { means, dealDC, pitchOf, dealInsight, dealAnswer, mayToll, talkRange } from "../engine/behavior/deals.js";
+import { inControl, onHandOver } from "./control.js";
 
 const loc = key => game.i18n.localize(key);
 const fmt = (key, data) => game.i18n.format(key, data);
@@ -101,13 +102,10 @@ export const liveBattle = () => battle;
 export const liveOn = combat => !!combat?.getFlag?.(MODULE_ID, "live")?.active;
 
 /**
- * Whose browser plays a battle: the GM who began it, while they're here; when they're gone, the active GM (who takes it
- * over).
+ * Whose browser plays a battle: the GM in control of FastFighting (control.js), every battle; the one who began it, or
+ * had it before, hands it over with control.
  */
-function runsHere(data) {
-  const owner = data?.user ? game.users.get(data.user) : null;
-  return owner?.active ? owner.isSelf : !!game.user.isActiveGM;
-}
+const runsHere = () => inControl();
 
 /**
  * Is the battle this browser holds still its own to play? The combat's flag (every client sees it) says which battle
@@ -120,7 +118,7 @@ function stillHere() {
 }
 
 /** This browser plays the battle it holds now. */
-const playsHere = () => !!battle && runsHere(battle.data) && stillHere();
+const playsHere = () => !!battle && runsHere() && stillHere();
 
 /**
  * The GM whose browser plays the battle on this encounter, where it isn't this one's (another GM began it, or picked it
@@ -269,7 +267,7 @@ function forget(combatId, battleId) {
  * hold several; else the one the tracker shows).
  */
 export async function startLiveBattle(spec, { style = setting("storyStyle"), odds = null, players = [], playersRun = true, begin = true, began = false, combatId = null, applyDamage = setting("applyPlayerDamage") } = {}) {
-  if ( !game.user.isGM ) return null;
+  if ( !inControl() ) return null;
   const scene = canvas.scene;
   // (The plan's own encounter, by its id; else the scene's as the planner has it: the tracker's, linked to this scene or
   // to none.)
@@ -352,7 +350,7 @@ async function park() {
  * it is; false where there's no live battle of this browser's on it.
  */
 export function holdBattleOn(combat) {
-  if ( !combat || !game.user.isGM ) return Promise.resolve(false);
+  if ( !combat || !inControl() ) return Promise.resolve(false);
   if ( battle?.combat === combat ) return Promise.resolve(true);
   if ( !liveOn(combat) ) return Promise.resolve(false);
   return queue(async () => {
@@ -4525,7 +4523,7 @@ function awaySetting(on) {
  */
 let picking = false;
 async function pickUp(only = null, { quiet = false } = {}) {
-  if ( !game.user.isGM || battle || picking || (swapping && !only) ) return;
+  if ( !inControl() || battle || picking || (swapping && !only) ) return;
   picking = true;
   try {
     const viewed = ui.combat?.viewed ?? game.combat ?? null;
@@ -4542,7 +4540,7 @@ async function pickUpFrom(combats, quiet) {
     if ( !flag?.active ) continue;
     const found = kept(combat.id, flag.id);
     const data = found?.data;
-    if ( !data?.snapshot || !runsHere(data) ) continue;
+    if ( !data?.snapshot || !runsHere() ) continue;
     data.user = game.user.id; // (its GM gone: this one plays it now)
     // (And whether FastFighting is in use for it, for a battle kept before the flag said so: flagOf's inUse.)
     const inUse = flag.inUse ?? (flag.active && (!data.prepared || !!data.touched));
@@ -4618,13 +4616,13 @@ export function registerLiveBattles() {
   registerQuietDice();
   // (A parked battle's encounter moving on: picked up first, then followed.)
   Hooks.on("combatTurnChange", (combat, prior, current) => {
-    if ( battle?.combat === combat || !liveOn(combat) || !game.user.isGM ) return onTurnChange(combat, prior, current);
+    if ( battle?.combat === combat || !liveOn(combat) || !inControl() ) return onTurnChange(combat, prior, current);
     holdBattleOn(combat).then(held => held && onTurnChange(combat, prior, current));
   });
   // (The encounter viewed, on another scene or the tracker's: its battle picked up, the one held parked.)
   const followView = () => {
     const viewed = ui.combat?.viewed;
-    if ( viewed && viewed !== battle?.combat && liveOn(viewed) && game.user.isGM ) holdBattleOn(viewed);
+    if ( viewed && viewed !== battle?.combat && liveOn(viewed) && inControl() ) holdBattleOn(viewed);
   };
   Hooks.on("canvasReady", followView);
   Hooks.on("renderCombatTracker", followView);
@@ -4684,13 +4682,33 @@ export function registerLiveBattles() {
     else playerLeft(user.id);
   });
   followSetting("autoPlayAbsent", awaySetting);
+  // (Control handed to another GM: the battle held here kept as it stands, after whatever was under way, and let go;
+  // `done` once it is. Control come here: the battles picked up.)
+  onHandOver(done => queue(async () => {
+    const b = battle;
+    if ( b && playsHere() ) await inTurn(() => keepNow(b));
+    done();
+    if ( battle ) {
+      letGo();
+      changed();
+    }
+  }));
+  Hooks.on("fastFighting.control", () => {
+    if ( inControl() ) {
+      if ( !battle ) pickUp();
+    } else if ( battle ) queue(async () => {
+      if ( !battle || inControl() ) return;
+      letGo();
+      changed();
+    });
+  });
   // (Another GM rewound it, began another, or picked it up while this one was away: this browser lets go of the one it
   // held, and takes up one that's its own now.)
   // (Foundry's own Begin Encounter, a battle prepared on it: the battle begins with it.)
   Hooks.on("updateCombat", combat => {
     if ( battle?.combat === combat && battle.data.prepared && combat.started && playsHere() ) beginEncounter();
     // (A parked battle's, begun with Foundry's own button: picked up, and begun with it.)
-    else if ( battle?.combat !== combat && combat.started && liveOn(combat) && game.user.isGM ) {
+    else if ( battle?.combat !== combat && combat.started && liveOn(combat) && inControl() ) {
       holdBattleOn(combat).then(held => held && battle.data.prepared && combat.started && playsHere() && beginEncounter());
     }
   });
@@ -4708,7 +4726,7 @@ export function registerLiveBattles() {
       changed();
     }
     // (Its transcript goes with it, unless the GM is troubleshooting: live-journals.js.)
-    if ( game.user.isActiveGM ) inTurn(() => dropTranscripts("combatDeleted", combat.id));
+    if ( inControl() ) inTurn(() => dropTranscripts("combatDeleted", combat.id));
   });
   Hooks.on("renderChatMessageHTML", (message, html) => {
     for ( const button of html.querySelectorAll?.("[data-ff-live]") ?? [] ) {

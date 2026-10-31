@@ -8,6 +8,7 @@
  */
 import { PREDICTION_SECONDS } from "./engine/run-budget.js";
 import { THREAD_SHARE } from "./engine/batch-pool.js";
+import { controlSettingChanged } from "./foundry/control.js";
 import { MODULE_ID, ALLEGIANCE, DOWNED_MODELS, HEAL_AGGRO, ALLY_DYING, AFTERMATH, OPENING, CONCEDE_LUCK, THEFT_LUCK, EXECUTE_LUCK, SWITCH_LUCK, TRAITOR_LUCK, TRAP_LUCK, IGNORE_TROUBLES, TAUNT_LUCK, STAND_GROUND, AVOID_KILLING, LEAVE_RESOLVE, ROLEPLAY_FORGETS, ADHD, NEUTRAL_REACH, MAX_ROUNDS, LORE_BOOST } from "./constants.js";
 
 const choices = (keys, prefix) => Object.fromEntries(keys.map(k => [k, `FASTFIGHTING.${prefix}.${k}`]));
@@ -296,6 +297,8 @@ export function registerSettings(DefaultsConfig, GenericPathsConfig, StoryTables
   game.settings.register(MODULE_ID, "partyCommand", { scope: "world", config: false, type: Object, default: {} });
   // This computer's pace, from its last prediction (engine/run-budget.js paceOf): the planner's estimate goes by it.
   game.settings.register(MODULE_ID, "runPace", { scope: "client", config: false, type: Number, default: 1 });
+  // The GM in control of FastFighting (foundry/control.js): a user id, "" for none named yet.
+  game.settings.register(MODULE_ID, "controller", { scope: "world", config: false, type: String, default: "", onChange: () => controlSettingChanged() });
   // What this GM's swing studies test (the planner's pills): each part on unless false.
   game.settings.register(MODULE_ID, "swingScope", { scope: "client", config: false, type: Object, default: {} });
   game.settings.register(MODULE_ID, "sideDefaults", {

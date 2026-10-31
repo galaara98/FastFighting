@@ -27,7 +27,9 @@ beforeEach(() => {
   Object.assign(globalThis.game, {
     combats: { find: fn => combats.find(fn) },
     settings: { get: () => null },
-    user: { isGM: true }
+    // (The GM in control of FastFighting, control.js: the only one who writes plans.)
+    user: { id: "gm", isGM: true, isSelf: true },
+    users: { contents: [], activeGM: { id: "gm" }, get: id => (id === "gm" ? game.user : null) }
   });
   // (Foundry's mergeObject copies what it merges in, as this does.)
   globalThis.foundry = { utils: { mergeObject: (a, stored) => {
@@ -236,9 +238,9 @@ describe("a plan kept on a scene a player owns", () => {
 
   test("written by its player-owner, isn't read: the defaults, and an encounter there starts from them", async () => {
     const gmFlags = {};
-    const gm = { id: "gm", isGM: true, getFlag: (scope, key) => gmFlags[scope]?.[key] };
+    const gm = { id: "gm", isGM: true, isSelf: true, active: true, getFlag: (scope, key) => gmFlags[scope]?.[key] };
     const users = [gm, { id: "pat", isGM: false, getFlag: () => ({ ambush: "forged" }) }];
-    game.users = { some: fn => users.some(fn), get: id => users.find(u => u.id === id) };
+    game.users = { contents: users, activeGM: gm, some: fn => users.some(fn), get: id => users.find(u => u.id === id) };
     game.user = { ...gm, update: async changes => {
       for ( const [path, value] of Object.entries(changes) ) {
         const [, scope, key, id] = path.match(/^flags\.([^.]+)\.(\w+)\.(\w+)$/);
