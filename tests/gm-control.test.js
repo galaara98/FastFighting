@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { controllerOf, handsOver } from "../scripts/foundry/control.js";
+import { controllerOf, handsOver, lockedUntil, LOCK_MS } from "../scripts/foundry/control.js";
 
 describe("the GM in control of FastFighting (controllerOf)", () => {
   const gm = (id, active = true) => ({ id, isGM: true, active });
@@ -32,5 +32,27 @@ describe("the GM in control asked to hand over (handsOver)", () => {
     expect(handsOver("refuse")).toBe(false);
     expect(handsOver("allow")).toBe(true);
     expect(handsOver(null)).toBe(true);
+  });
+});
+
+describe("Take Control off after two refusals (lockedUntil)", () => {
+  const s = n => n * 1000;
+
+  test("two refusals by the GM in control within a minute: off for 5 minutes from the second", () => {
+    const refusals = [{ by: "ana", at: s(0) }, { by: "ana", at: s(50) }];
+    expect(lockedUntil(refusals, "ana", s(60))).toBe(s(50) + LOCK_MS);
+    expect(lockedUntil(refusals, "ana", s(50) + LOCK_MS)).toBe(0);
+  });
+
+  test("one refusal, or two more than a minute apart: not off", () => {
+    expect(lockedUntil([{ by: "ana", at: s(0) }], "ana", s(1))).toBe(0);
+    expect(lockedUntil([{ by: "ana", at: s(0) }, { by: "ana", at: s(61) }], "ana", s(62))).toBe(0);
+  });
+
+  test("only the refusals of the GM in control now count", () => {
+    const refusals = [{ by: "ana", at: s(0) }, { by: "bo", at: s(10) }];
+    expect(lockedUntil(refusals, "bo", s(20))).toBe(0);
+    expect(lockedUntil([...refusals, { by: "bo", at: s(30) }], "ana", s(40))).toBe(0);
+    expect(lockedUntil([...refusals, { by: "bo", at: s(30) }], "bo", s(40))).toBe(s(30) + LOCK_MS);
   });
 });

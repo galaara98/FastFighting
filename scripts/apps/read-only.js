@@ -4,10 +4,25 @@
  * that change nothing (`looks`: tabs, focus, panning) still work.
  */
 import { MODULE_ID } from "../constants.js";
-import { controller, inControl, takeControl } from "../foundry/control.js";
+import { controller, inControl, takeControl, takeLocked } from "../foundry/control.js";
 
 /** The apps already guarded: their root element, so its listener is added once. */
 const guarded = new WeakSet();
+
+/** The apps drawn here (readOnly) and how: drawn again as control changes, the bar and its button with it. */
+const drawn = new Map();
+
+Hooks.on("fastFighting.control", () => {
+  for ( const [app, options] of drawn ) {
+    if ( !app.rendered ) {
+      drawn.delete(app);
+      continue;
+    }
+    // (A planner mid-prediction isn't drawn again till it's done: its bar is, now.)
+    if ( app.running ) readOnly(app, options);
+    else app.render();
+  }
+});
 
 /** An element's action: one that changes nothing, or none. */
 const looksOnly = (el, looks) => !el?.dataset?.action || looks.includes(el.dataset.action);
@@ -19,6 +34,7 @@ const looksOnly = (el, looks) => !el?.dataset?.action || looks.includes(el.datas
 export function readOnly(app, { looks = [], fields = "" } = {}) {
   const root = app?.element;
   if ( !root ) return;
+  drawn.set(app, { looks, fields });
   const off = !inControl();
   root.classList.toggle("ff-read-only", off);
   root.querySelector(":scope .ff-read-only-bar")?.remove();
@@ -49,6 +65,11 @@ export function readOnly(app, { looks = [], fields = "" } = {}) {
   take.className = "ff-take-control";
   take.innerHTML = `<i class="fa-solid fa-hand" aria-hidden="true"></i> `;
   take.append(game.i18n.localize("FASTFIGHTING.Control.Take"));
+  // (Refused twice: off for a while, saying why.)
+  if ( takeLocked() ) {
+    take.disabled = true;
+    take.dataset.tooltip = game.i18n.format("FASTFIGHTING.Control.Locked", { name: controller()?.name ?? "" });
+  }
   take.addEventListener("click", async event => {
     event.preventDefault();
     take.disabled = true;
@@ -58,8 +79,8 @@ export function readOnly(app, { looks = [], fields = "" } = {}) {
     } catch ( err ) {
       console.error(`${MODULE_ID} | taking control`, err);
     }
-    // (Refused: the button again.)
-    if ( !taken ) take.disabled = false;
+    // (Refused: the button again, unless that locked it.)
+    if ( !taken ) take.disabled = !!takeLocked();
   });
   bar.append(text, take);
   // (Above the window's content, under its title: the content lays out its own parts.)

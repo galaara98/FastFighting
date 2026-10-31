@@ -2894,6 +2894,7 @@
       "Allow": "Allow",
       "Refuse": "Refuse",
       "Refused": "{name} kept control of FastFighting.",
+      "Locked": "{name} refused twice. You can ask again in 5 minutes, or sooner if they leave or stop playing.",
       "Claimed": "{name} left, so you're in control of FastFighting now.",
       "TakenBy": "{name} took control of FastFighting."
     },

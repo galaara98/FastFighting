@@ -1319,9 +1319,9 @@ export function registerBattleVantage() {
   Hooks.on("updateJournalEntry", () => {
     if ( !inControl() ) later();
   });
-  // (A GM come or gone, or control handed over: whose browser plays the battle may have changed, playedElsewhere.)
+  // (A GM come or gone: whose browser plays the battle may have changed, playedElsewhere. Control handed over:
+  // read-only.js draws it again.)
   Hooks.on("userConnected", later);
-  Hooks.on("fastFighting.control", later);
   // (Rewound to before it began, with the window open: made ready again, as the planner left it.)
   Hooks.on("fastFighting.encounterRewound", combat => {
     if ( foundry.applications.instances.get("fast-fighting-battle") ) prepareVantage(combat);

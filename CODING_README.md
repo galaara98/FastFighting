@@ -32,7 +32,7 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
   plays live battles (`live-battle.js runsHere`), writes plans (`persistence.js` saveSetup, clearSetup,
   rememberPartyRole; `ensureAutoConfig`), keeps troubleshooting runs and tidies transcripts. `controllerOf` (pure): the
   GM named, here or not; none named, the active GM. Take Control (`takeControl`) queries the GM in control
-  (`HAND_CONTROL`): asked Allow or Refuse (`ASK_MS`, 20 s; no answer hands over, `handsOver`), their `onHandOver` callback keeps and lets go of the battle in the queue, then the setting
+  (`HAND_CONTROL`): asked Allow or Refuse (`ASK_MS`, 20 s; no answer hands over, `handsOver`; two refusals by the same GM within `REFUSE_WINDOW_MS` lock that asker's button for `LOCK_MS`, `lockedUntil`, lifted early when the GM in control disconnects or reports `IDLE_MS` without input, `CONTROL_IDLE`), their `onHandOver` callback keeps and lets go of the battle in the queue, then the setting
   names the taker, whose browser picks it up. A GM in control gone `GONE_MS` (15 s) is replaced by the active GM
   (`claimIfGone`). `fastFighting.control` fires on any change. Other GMs' planner and Battle Vantage are read only
   (`apps/read-only.js`): a bar with Take Control, fields off, and only the actions in `PLANNER_LOOKS` / `VANTAGE_LOOKS`.
