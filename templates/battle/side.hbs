@@ -71,7 +71,7 @@
     {{#if focus.none}}<p class="ff-hint ff-vside-hint">{{localize "FASTFIGHTING.Battle.Net.FocusHint"}}</p>{{/if}}
 
     {{#if focus.elsewhere}}
-    <div class="ff-battle-who"><img src="{{focus.img}}" alt=""><div><h3>{{focus.name}}</h3><span class="ff-battle-meta">{{localize "FASTFIGHTING.Battle.Net.NotInBattle"}}</span></div></div>
+    <div class="ff-battle-who" data-node="token:{{focus.tokenId}}"><img src="{{focus.img}}" alt=""><div><h3>{{focus.name}}</h3><span class="ff-battle-meta">{{localize "FASTFIGHTING.Battle.Net.NotInBattle"}}</span></div></div>
     <button type="button" class="ff-btn" data-action="bringIn" data-token="{{focus.tokenId}}"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.BringIn"}}</button>
     {{/if}}
 

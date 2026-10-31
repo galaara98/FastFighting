@@ -365,6 +365,17 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     el.addEventListener("change", event => {
       if ( event.target.closest?.("input, select, textarea") ) markInUse();
     }, true);
+    // (A creature's picture double-clicked, on the map of minds or in Details: its sheet, brought to the front.)
+    el.addEventListener("dblclick", event => {
+      const face = event.target.closest?.(".ff-net-face, .ff-battle-who img");
+      if ( !face ) return;
+      const id = face.closest("[data-node]")?.dataset.node ?? face.closest("[data-creature]")?.dataset.creature ?? null;
+      const b = BattleVantage.shown();
+      const tokenId = tokenOf(b, id);
+      if ( !tokenId ) return;
+      event.preventDefault();
+      showSheet(b.scene.tokens.get(tokenId)?.actor);
+    });
     el.addEventListener("pointerenter", () => { this.#hovering = true; });
     el.addEventListener("pointerleave", () => { this.#hovering = false; });
     listenMenus(el);
@@ -1212,6 +1223,16 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     setAside: decides ? [] : setAside, held: decides ? [] : held,
     team: teamBadge(key), teams, roles, notWith, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
   };
+}
+
+/** An actor's sheet: opened, or (open already) brought to the front, and out of its minimized state. */
+function showSheet(actor) {
+  const sheet = actor?.sheet;
+  if ( !sheet ) return;
+  if ( !sheet.rendered ) return sheet.render(true);
+  sheet.maximize?.();
+  if ( sheet.bringToFront ) sheet.bringToFront();
+  else sheet.bringToTop?.();
 }
 
 /** A node's token on the map: a creature's, or one that isn't in the battle ("token:<id>"). */
