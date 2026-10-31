@@ -10,7 +10,7 @@ import {
 } from "../constants.js";
 import { getAdapter } from "../api.js";
 import { setting, roundsRange } from "../settings.js";
-import { listJoin, listItems, localize, term, hasStat, brief, roundsText } from "../i18n.js";
+import { listJoin, listItems, localize, term, hasStat, brief, roundsText, escapeHtml } from "../i18n.js";
 import { placeLoot, openPile } from "../foundry/loot-drop.js";
 import { setAdhd } from "./token-tactics.js";
 import { getSetup, saveSetup, clearSetup, tokenSetup, planHolder, rememberPartyRole, sceneEncounter, encounterNumber } from "../foundry/persistence.js";
@@ -94,6 +94,22 @@ const swingGuess = (results, tests, seconds) => Math.max(1, Math.round(results.r
 
 /** A change in the Friendly Team's odds, in points: "+4.2%". */
 const swingPoints = d => `${d >= 0 ? "+" : ""}${(d * 100).toFixed(1)}%`;
+
+/**
+ * A range of changes as HTML ("-1.7% – +2.6%", FASTFIGHTING.Swing.Range): each end red or green by its sign, what
+ * stands between them the colour of the second.
+ */
+function swingRange(lo, hi) {
+  const tone = d => (d >= 0 ? "pos" : "neg");
+  const said = localize("FASTFIGHTING.Swing.Range", { lo: "\u0001", hi: "\u0002" });
+  const a = said.indexOf("\u0001");
+  const b = said.indexOf("\u0002");
+  const part = (d, text = swingPoints(d)) => `<span class="${tone(d)}">${escapeHtml(text)}</span>`;
+  // (The second end and what comes before it, as one: in the order the language puts them.)
+  if ( a < 0 || b < 0 ) return part(lo) + escapeHtml(" ") + part(hi);
+  const [first, second] = a < b ? [[a, lo], [b, hi]] : [[b, hi], [a, lo]];
+  return escapeHtml(said.slice(0, first[0])) + part(first[1]) + part(second[1], said.slice(first[0] + 1, second[0]) + swingPoints(second[1])) + escapeHtml(said.slice(second[0] + 1));
+}
 
 /** The swing study's fights so far, of about how many all its tests will run: "450/560". */
 const swingCount = ({ done, total }) => game.i18n.format("FASTFIGHTING.Planner.SwingFights", { done: done.toLocaleString(game.i18n.lang), total: total.toLocaleString(game.i18n.lang) });
@@ -1025,6 +1041,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     if ( unsettled ) {
       const [lo, hi] = range(s.win);
       row.value = localize("FASTFIGHTING.Swing.Range", { lo, hi });
+      row.valueHtml = swingRange(s.win.leanLo, s.win.leanHi);
     }
     return { ...row, cls };
   }

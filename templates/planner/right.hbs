@@ -114,7 +114,7 @@
         <li class="{{cls}}" {{#if hint}}data-tooltip-text="{{hint}}"{{/if}}>
           <span class="ff-swing-label">{{label}}{{#if downed}} <span class="ff-swing-death {{downed.cls}}"><i class="fa-solid fa-heart-crack" aria-hidden="true"></i> {{downed.value}}</span>{{/if}}{{#if death}} <span class="ff-swing-death {{death.cls}}"><i class="fa-solid fa-skull" aria-hidden="true"></i> {{death.value}}</span>{{/if}}</span>
           <span class="ff-swing-bar"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>
-          <span class="ff-swing-value {{#if positive}}pos{{else}}neg{{/if}}">{{value}}</span>
+          <span class="ff-swing-value {{#if positive}}pos{{else}}neg{{/if}}">{{#if valueHtml}}{{{valueHtml}}}{{else}}{{value}}{{/if}}</span>
         </li>
         {{/each}}
       </ul>

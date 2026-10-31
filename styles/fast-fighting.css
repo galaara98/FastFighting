@@ -169,7 +169,8 @@
 .ff-swing-bar span.neg { background: var(--ff-hostile); transform: translateX(-100%); }
 .ff-swing-value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .ff-swing-value.pos { color: var(--ff-friendly); }
-.ff-swing-value.neg { color: var(--ff-hostile); }
+.ff-swing-value.neg, .ff-swing-value .neg { color: var(--ff-hostile); }
+.ff-swing-value .pos { color: var(--ff-friendly); }
 .ff-swing-run { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 /* A side's pill: its creatures in the encounter (a light ring of its colour), all of them on the map (a dark one). */
 .ff-swing-pill { --ff-pill: var(--ff-text-dim); }
