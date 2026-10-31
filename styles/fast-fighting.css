@@ -160,7 +160,8 @@
 .ff-meter span { display: block; height: 100%; background: var(--ff-accent); }
 
 .ff-swing { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 4px; }
-.ff-swing li { display: grid; grid-template-columns: 1fr 160px 60px; gap: 8px; align-items: center; font-size: 12px; }
+.ff-swing li { display: grid; grid-template-columns: 1fr 160px minmax(60px, max-content); gap: 8px; align-items: center; font-size: 12px; }
+.ff-swing-value { white-space: nowrap; }
 .ff-swing-bar { position: relative; height: 10px; background: var(--ff-surface-2); border-radius: 3px; }
 .ff-swing-bar span { position: absolute; top: 0; bottom: 0; left: 50%; border-radius: 3px; }
 .ff-swing-bar span.pos { background: var(--ff-friendly); }

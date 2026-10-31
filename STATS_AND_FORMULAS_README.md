@@ -1937,7 +1937,8 @@ the chance of a PC dying, by 2.5 points or more, with as few fights as it takes 
   than a call that could come out the other way next time. A
   test that matters is settled when each measure is known to within 2 points, or as sure as the main run.
 - The list, while it runs and after: each test's change in the win chance, largest first; Negligible for one under
-  2.5 points; ≈ and in italics for one near the line, or still open (Still measuring, or Not settled in time); beside
+  2.5 points; for one near the line or not settled in time, its likely range at 1.28 standard errors (−1.7% – +2.6%),
+  in italics, as is one still measuring; beside
   its name, a broken heart and the change in a Friendly going down, and a skull and the change in a PC dying, each where
   it's 2.5 points or more (red where it's likelier); each tooltip with every measure, how far each could be, and from
   how many fights. The bar and the Run button fill by its time, and a chip beside the fight count shows its fights so

@@ -192,8 +192,8 @@ export function ledgerModel(ledger, skip = -1) {
 
 /**
  * One measure of a test against the main run: a share of its fights (`hits` of `n`) against the main run's (`p0` of
- * `n0`): the change (`estimate`), how far it could be (`lo`, `hi`), the plain change (`raw`), and whether it's
- * `clear`: "matters", "negligible", or null. With `model` (the wins' shift model, and the test's margins: `sum`,
+ * `n0`): the change (`estimate`), how far it could be (`lo`, `hi`; at SWING_LEAN_Z, `leanLo`, `leanHi`), the plain
+ * change (`raw`), and whether it's `clear`: "matters", "negligible", or null (`lean`: the same at SWING_LEAN_Z). With `model` (the wins' shift model, and the test's margins: `sum`,
  * `squares`), by the margins where the fight is lopsided and they agree with the plain change (`byMargins`).
  */
 export function measured({ n, hits, sum = 0, squares = 0 }, p0, n0, { model = null, threshold = SWING_THRESHOLD, z = SWING_Z } = {}) {
@@ -234,7 +234,8 @@ export function measured({ n, hits, sum = 0, squares = 0 }, p0, n0, { model = nu
     return l > -threshold && h < threshold ? "negligible" : null;
   };
   const [lo, hi] = at(z);
-  return { estimate, lo, hi, raw, clear: clearAt(z), lean: clearAt(SWING_LEAN_Z), byMargins };
+  const [leanLo, leanHi] = at(SWING_LEAN_Z);
+  return { estimate, lo, hi, leanLo, leanHi, raw, clear: clearAt(z), lean: clearAt(SWING_LEAN_Z), byMargins };
 }
 
 /** A settled test that isn't clear, called at SWING_LEAN_Z: it matters, it's negligible, or it's near the line. */

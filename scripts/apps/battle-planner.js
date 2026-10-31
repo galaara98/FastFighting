@@ -993,14 +993,19 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /**
    * A swing test as the list shows it: its change in the Friendly Team's odds and what that means, by its status (it
-   * matters; negligible, under SWING_THRESHOLD either way; near the line, could go either way; still measuring, or not
-   * settled in time); the change in one of the Friendly Team going down, and in a character dying, beside it where
+   * matters; negligible, under SWING_THRESHOLD either way; one that won't settle, near the line or not settled in time,
+   * as its likely range, at SWING_LEAN_Z, here and in its tooltip; still measuring); the change in one of the Friendly Team going down, and in a character dying, beside it where
    * that's SWING_THRESHOLD or more; and in its tooltip, each measure's change and how far it could be, from how many
    * fights.
    */
   #swingRow(s) {
     const threshold = (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang);
-    const line = (key, m) => localize(key, { value: swingPoints(m.estimate), lo: swingPoints(m.lo), hi: swingPoints(m.hi) });
+    const unsettled = s.status === "near" || (s.status === "open" && !this.running);
+    const range = m => (unsettled ? [m.leanLo, m.leanHi] : [m.lo, m.hi]).map(swingPoints);
+    const line = (key, m) => {
+      const [lo, hi] = range(m);
+      return localize(key, { value: swingPoints(m.estimate), lo, hi });
+    };
     const note = { negligible: "NegligibleNote", near: "NearNote", open: this.running ? "MeasuringNote" : "UnsureNote" }[s.status];
     const hint = [
       note ? localize(`FASTFIGHTING.Swing.${note}`, { threshold }) : null,
@@ -1017,7 +1022,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     };
     if ( s.win.clear === "negligible" ) Object.assign(row, { width: 0, value: loc("FASTFIGHTING.Swing.Negligible") });
     const cls = { negligible: "is-noise", near: "is-near", open: "is-open" }[s.status] ?? "";
-    if ( s.status === "near" ) row.value = localize("FASTFIGHTING.Swing.NearValue", { value: row.value });
+    if ( unsettled ) {
+      const [lo, hi] = range(s.win);
+      row.value = localize("FASTFIGHTING.Swing.Range", { lo, hi });
+    }
     return { ...row, cls };
   }
 
