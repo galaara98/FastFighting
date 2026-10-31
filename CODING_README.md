@@ -429,6 +429,12 @@ three successes or failures), so what it came to is the system's to say, by the 
   worse; the sheet as it was, nothing told. PF2e's dying steps need nothing more.
 The GMs' log gives the system's `text`, else what it came to (dying n, stabilized, dies).
 
+**A player's size-up (API 39).** `readTurn` may give `{type: "study", targetId, degree, natural, total, dc}` for a
+check at a foe that learns about it (PF2e's Recall Knowledge). On a critical success (`degree` 3) at a creature that
+isn't a player's, a GM is asked whether to share the attribute hints (`live-battle.js shareLore`). If they say yes, it's
+told as the engine's own critical size-up is (`simulator.js learnLore`): a "lore" line naming the target's best and
+worst aptitude in words, and known to the character from then on. Anything less tells nothing.
+
 #### Advantage reaches the system's roller (API 24)
 
 The engine's own advantage on a roll it asks the system to make in a live battle goes with the request: `rollStrike`'s,
