@@ -1898,30 +1898,58 @@ Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engin
 
 ### Swing factors
 
-Search: swing factors, Compute swing factors, what moves the odds, Without, impact, swingRuns, linchpin, key target, hinges on, noise, What to test
+Search: swing factors, Compute swing factors, what moves the odds, Without, impact, negligible, 2.5 points, margin, shift model, Likely, Unlikely, linchpin, key target, hinges on, What to test, swingBudgetMs
 
-Shows how much each combatant and each option moves the Friendly Team's win chance.
+Shows whether each combatant and each rule moves the Friendly Team's win chance by 2.5 points or more, with as few fights
+as it takes to tell.
 
-- What to test: a pill each for the Friendly Team's side, its foes, those who take no side, and the rules; the GM's choice
-  is kept in their browser for every battle.
-- Tests: the battle without each of up to 12 creatures from the pills chosen (those that did most in the main run
-  first: damage plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with
-  Leadership, Morale, and Terrain & positioning each turned off (only those that are on).
-- Each test runs for 3 × prediction time ÷ 15 (`SWING_FULL`, the most tests a study has; `swingShareMs`), and no more
-  fights than the main run did (`swingRuns`); seed 99, on the background workers where the prediction runs on them. A
-  study of fewer tests finishes sooner.
-- While it runs, the bar and the Run button fill by the tests' time, and a chip beside the fight count shows the fights
-  run so far of about how many there will be (from the main run's pace at first, then from the tests done so far).
-- Each shows the Friendly Team's win chance in the test minus the main run's, largest change first.
-- Noise: a change under 2 points, or under twice its standard error (√(p(1−p)/n) of the test and of the main run,
-  combined), may be chance. It's shown faint and never makes an Overview tile.
-- Overview tiles, once it has run: the **Linchpin** (the ally whose absence lowers the Friendly Team's odds most), the
-  **Key target** (the foe whose absence raises them most), and what the fight **Hinges on** (a rule moving them 10
-  points or more).
+- What to test: a pill each for the Friendly Team's side, its foes and those who take no side, each clicked round
+  through its creatures in the encounter (a light ring, the default), all of them on the map (a dark ring), and none (no
+  ring); and the rules, on or off. The GM's choice is kept in their browser for every battle.
+- Tests: the battle without each creature from the pills chosen (those that did most in the main run first: damage
+  plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with Leadership, Morale,
+  and Terrain & positioning each turned off (only those that are on). Over 35 tests, the count is shown as a warning.
+- Time: 6 × prediction time for 12 tests (four characters, five foes, every rule), × √(tests ÷ 12) otherwise
+  (`swingBudgetMs`): 10 seconds give 12 tests 60 seconds, 3 tests 30, 15 tests 67. It ends sooner once every test is
+  settled.
+- How the fights are handed out: every test gets 16 fights first (`SWING_MIN_FIGHTS`), then the tests still open, the
+  fewest fights first, then those that matter but aren't known closely yet. Each background worker takes about 150 ms
+  of one test's fights at a time (`CHUNK_MS`), then whatever is needed most then.
+- The change: the Friendly Team's wins in the test against the main run, with Agresti and Caffo's interval (a win and a
+  loss added to each) at 2.5 standard errors (`SWING_Z`, about 99%, as the study looks again after every few fights).
+  Odds stay between 0 and 1, so a party winning 1% can lose 1 point at most.
+- In a lopsided fight (the Friendly Team winning under 10% or over 90%, in the main run and the test alike), each
+  fight's margin is used too: what's left of the Friendly Team's strength at the end less its foes' (each creature
+  weighed by its max HP; its HP left while it's still in the fight, else nothing), from −1 to 1, leaving out the
+  creature the test leaves out. The test moved the margins by Δ; the main run's own fights, each moved by Δ, would win
+  so many more or fewer (the win line where the main run's wins sit among its margins). Where that agrees with the wins,
+  it's the change shown. A party wiped every time without ever coming close settles in 16 fights, where the wins alone
+  would need about 150. In a close fight it isn't used: a change there turns clear wins into clear losses rather than
+  moving every margin a little, and it understates (7 points against 39 measured).
+- Matters: the change is 2.5 points or more, its whole interval on one side. Negligible: its interval within ±2.5; or,
+  once the test has as many fights as the main run (no more could make it surer than the main run's own odds), under
+  2.5. Calculated: a change that has stayed within 2 points of where it is over the second half of its fights (32 at
+  least) settles the test, mattering or not by that change. A test that matters is settled when known to within 2
+  points, or as sure as the main run.
+- The list, while it runs and after: each test's change, largest first; Negligible for one under 2.5 points; a test
+  still open shown in italics (Still measuring, or Not settled in time); each tooltip with how far it could be and from
+  how many fights. The bar and the Run button fill by its time, and a chip beside the fight count shows its fights so
+  far of about how many there will be (at its pace so far; at first, the main run's).
+- Before it runs, from the main run's own fights: where a creature fell early and where it didn't, the margin against how
+  much of the fight it missed, through the same model, shown as Likely or Unlikely to move the odds 2.5 points. Its side
+  going badly is often why it fell, so this overstates, by far (a fighter's 75 points against 14 measured): it gives no
+  number, and only decides which tests the study runs first. A main run shown again from an earlier session keeps no
+  fights, so it has no hints, and its study goes by the wins alone.
+- Overview tiles, once it has run, from the tests that matter: the **Linchpin** (the ally whose absence lowers the
+  Friendly Team's odds most), the **Key target** (the foe whose absence raises them most), and what the fight **Hinges
+  on** (a rule moving them 10 points or more).
 
-Example: 6 seconds give each test 1.2 seconds, so 10 tests take 12 seconds at most.
+Example: a road ambush the Friendlies win 73.5% of the time, 15 tests, 10 seconds: two kobolds settled at +26.5 (every
+fight won without either) in about 34 fights each, most of the rest steady by 300 to 800, and the three biggest (−47,
+−37, −28) used the rest of the 67 seconds. A house the Friendlies never win: all 12 tests negligible in about 12 seconds.
 
-Code: `foundry/battle.js` `swingTests`, `swingFactors`; `engine/run-budget.js` `swingShareMs`, `swingRuns`.
+Code: `foundry/battle.js` `swingTests`, `swingFactors`, `swingScopeState`; `engine/swing-stats.js`; `engine/run-budget.js`
+`swingBudgetMs`; `engine/batch-pool.js` `stream`.
 
 ### Initiative and turn order
 

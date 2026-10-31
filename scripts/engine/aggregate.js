@@ -2,6 +2,15 @@
  * Accumulates per-run summaries into batch statistics.
  */
 import { STATUS, SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
+import { createLedger } from "./swing-stats.js";
+
+/**
+ * An aggregator's numbers as a batch gives them (`extra` beside them: its seed), with its fights' ledger
+ * (swing-stats.js createLedger) as `ledger`, kept out of what's saved or copied (not enumerable): the swing study's.
+ */
+export function finished(agg, extra = {}) {
+  return Object.defineProperty({ ...agg.finish(), ...extra }, "ledger", { value: agg.ledger(), enumerable: false });
+}
 
 /** How a foe of the party ends a fight, for the planner's Overview (the first that fits, in this order). */
 export const FOE_ENDS = Object.freeze(["slain", "down", "captured", "fled", "gaveUp", "talked", "standing"]);
@@ -93,10 +102,15 @@ export function createAggregator(prep) {
   let reinforcedRuns = 0;
   const foeHeads = HOSTILE_GROUPS.map(key => prep.command?.[key]?.[0]?.id).filter(id => id && units[id]);
   let headFellRuns = 0;
+  const ledger = createLedger(prep.combatants);
 
   return {
+    /** The fights so far, for the swing study (swing-stats.js createLedger). */
+    ledger: () => ledger.view(),
+
     add(result, seed) {
       runs += 1;
+      ledger.add(result);
       rounds.push(result.rounds);
       if ( result.outcome === "stalemate" ) stalemate += 1;
       else if ( result.outcome === "none" ) none += 1;

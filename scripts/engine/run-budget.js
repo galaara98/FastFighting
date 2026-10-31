@@ -49,17 +49,12 @@ export function paceOf(n, seconds, runs, threads = 1) {
   return budgetMs(seconds) / (runs / (threads >= 1 ? Math.floor(threads) : 1)) / fightMs(n);
 }
 
-/** The most tests a swing study runs: twelve creatures left out, three rules turned off. */
-export const SWING_FULL = 15;
+/** A swing study of this many tests (four characters, five foes, every rule on) gets six predictions' time. */
+export const SWING_AVERAGE = 12;
 
 /**
- * Each of the swing factors' tests' time (ms): a full study's share of three predictions' time, so a study of fewer
- * tests (the planner's pills) finishes sooner, each test as sure as in a full one.
+ * A swing study's time at most (ms): six predictions' time for SWING_AVERAGE tests, more for more tests and less for
+ * fewer, as the square root of how many (each test settled sooner leaves more for the rest: swing-stats.js). It ends
+ * sooner once every test is settled.
  */
-export const swingShareMs = (tests, seconds) => 3 * budgetMs(seconds) / Math.max(SWING_FULL, tests);
-
-/**
- * The most fights each swing test runs: as many as the prediction it's measured against ran (MAX_RUNS at most, one at
- * least). On a big battle its time (swingShareMs) runs out first.
- */
-export const swingRuns = baselineRuns => Math.max(1, Math.min(MAX_RUNS, Math.round(Number(baselineRuns) || 1)));
+export const swingBudgetMs = (tests, seconds) => 6 * budgetMs(seconds) * Math.sqrt(Math.max(1, Number(tests) || 1) / SWING_AVERAGE);

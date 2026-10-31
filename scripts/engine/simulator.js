@@ -34,7 +34,7 @@ import { sinkHopeless } from "./behavior/hopeless.js";
 import { focusWants, focusAgenda } from "./behavior/focus.js";
 import { keepTogether } from "./behavior/together.js";
 import { mayLeave, startLeaving, isLeaving, wayOff, goAlong, confronted, dealsWithIt, backOnItsWay } from "./behavior/leaving.js";
-import { createAggregator } from "./aggregate.js";
+import { createAggregator, finished } from "./aggregate.js";
 import { spotTraps, stepOut, learnTrap } from "./behavior/traps.js";
 import { talkActionsThisTurn, choosePitch, attemptTalk, shareLanguage, resolveTalk, aimOf, remaining as goodsLeft, dropShare } from "./behavior/talk.js";
 import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canTalk, prefersTalk } from "./behavior/standoff.js";
@@ -5390,7 +5390,7 @@ export async function runBatch(spec, rules, { runs = 2000, seed = randomSeed(), 
     }
   }
   onProgress?.(1, done);
-  return { ...agg.finish(), seed };
+  return finished(agg, { seed });
 }
 
 /** Synchronous batch for tests and small what-if comparisons. */
@@ -5401,7 +5401,7 @@ export function runBatchSync(spec, rules, { runs = 1000, seed = 1 } = {}) {
     const runSeed = deriveSeed(seed, i);
     agg.add(runOne(prep, runSeed), runSeed);
   }
-  return { ...agg.finish(), seed };
+  return finished(agg, { seed });
 }
 
 /** Replay one seed with a full narrative log and captured end state. */

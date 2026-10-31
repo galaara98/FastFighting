@@ -169,6 +169,18 @@
 .ff-swing-value.pos { color: var(--ff-friendly); }
 .ff-swing-value.neg { color: var(--ff-hostile); }
 .ff-swing-run { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+/* A side's pill: its creatures in the encounter (a light ring of its colour), all of them on the map (a dark one). */
+.ff-swing-pill { --ff-pill: var(--ff-text-dim); }
+.ff-swing-pill--friendly { --ff-pill: var(--ff-friendly); }
+.ff-swing-pill--foes { --ff-pill: var(--ff-hostile); }
+.ff-swing-pill--neutrals { --ff-pill: var(--ff-neutral); }
+.ff-swing-pill.is-encounter { border-color: color-mix(in srgb, var(--ff-pill) 45%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ff-pill) 45%, transparent); }
+.ff-swing-pill.is-all { border-color: var(--ff-pill); box-shadow: 0 0 0 1px var(--ff-pill); }
+.ff-swing-count.is-warn { color: var(--ff-attention); }
+/* A swing test still open, and the main run's estimates before the study. */
+.ff-swing li.is-open .ff-swing-value { font-style: italic; opacity: 0.8; }
+.ff-swing li.is-preview { font-style: italic; opacity: 0.75; }
+.ff-swing li.is-preview .ff-swing-bar span { opacity: 0.6; }
 .ff-swing-run .ff-filters { flex: 1; padding: 0; }
 .ff-swing-count { color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
 .ff-swing li.is-noise { opacity: 0.45; }

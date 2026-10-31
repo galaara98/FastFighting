@@ -21,7 +21,7 @@ import {
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
 import { showSheet, panToToken, tokenHudAt } from "../foundry/sheet-tools.js";
 import {
-  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, swingTests, SWING_SCOPES, typicalFight, fightThreads,
+  gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, swingTests, SWING_SCOPES, SWING_MANY, swingScopeState, nextSwingState, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, repickCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
   battleFor, surpriseMode, systemSurprise, mainCoin, PURSE_TEAMS, readReinforcements } from "../foundry/battle.js";
 import { SURPRISE } from "../engine/behavior/surprise.js";
@@ -39,7 +39,8 @@ import { BattleVantage } from "./battle-vantage.js";
 import { listenMenus } from "./menus.js";
 import { FOE_ENDS } from "../engine/aggregate.js";
 import { blink, keepTyping } from "./blink.js";
-import { expectedRuns, paceOf, swingRuns, swingShareMs, budgetMs, SWING_FULL, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
+import { expectedRuns, paceOf, swingBudgetMs, budgetMs, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
+import { swingPreview, SWING_THRESHOLD } from "../engine/swing-stats.js";
 import { signedNumber } from "../engine/trait-parts.js";
 import { budgetFudges, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
@@ -88,8 +89,11 @@ function kindChip(spec) {
 /** How many fights a run has done, in the reader's numbers ("1,240 fights"). */
 const fightCount = n => game.i18n.format("FASTFIGHTING.Planner.FightsRun", { n: (Number(n) || 0).toLocaleString(game.i18n.lang) });
 
-/** About how many fights each swing test runs, at the run's pace (the first guess; battle.js swingFactors refines it). */
-const swingGuess = (results, seconds) => Math.min(swingRuns(results.runs), Math.max(1, Math.round(results.runs * swingShareMs(SWING_FULL, seconds) / budgetMs(seconds))));
+/** About how many fights a swing study of so many tests runs in its time, at the run's pace (battle.js refines it). */
+const swingGuess = (results, tests, seconds) => Math.max(1, Math.round(results.runs * swingBudgetMs(tests, seconds) / budgetMs(seconds)));
+
+/** A change in the Friendly Team's odds, in points: "+4.2%". */
+const swingPoints = d => `${d >= 0 ? "+" : ""}${(d * 100).toFixed(1)}%`;
 
 /** The swing study's fights so far, of about how many all its tests will run: "450/560". */
 const swingCount = ({ done, total }) => game.i18n.format("FASTFIGHTING.Planner.SwingFights", { done: done.toLocaleString(game.i18n.lang), total: total.toLocaleString(game.i18n.lang) });
@@ -988,6 +992,44 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
+   * A swing test as the list shows it: its change in the Friendly Team's odds and what that means, by its status (it
+   * matters; negligible, under SWING_THRESHOLD either way; still measuring, or not settled in time), with how far it
+   * could be and from how many fights.
+   */
+  #swingRow(s) {
+    const data = { lo: swingPoints(s.lo), hi: swingPoints(s.hi), n: s.runs.toLocaleString(game.i18n.lang), wins: s.wins.toLocaleString(game.i18n.lang) };
+    const row = { label: s.label, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0, value: swingPoints(s.delta) };
+    if ( s.status === "negligible" ) {
+      return { ...row, cls: "is-noise", width: 0, value: loc("FASTFIGHTING.Swing.Negligible"),
+        hint: localize("FASTFIGHTING.Swing.NegligibleHint", { ...data, threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }) };
+    }
+    if ( s.status === "open" ) return { ...row, cls: "is-open", hint: localize(this.running ? "FASTFIGHTING.Swing.Measuring" : "FASTFIGHTING.Swing.Unsure", data) };
+    return { ...row, hint: localize("FASTFIGHTING.Swing.Between", data) };
+  }
+
+  /**
+   * Before a swing study has run: what the main run's own fights hint leaving each creature out would do
+   * (swing-stats.js swingPreview), shown as estimates, largest first; none where the run kept no ledger (one shown again
+   * from an earlier session).
+   */
+  #swingPreview(r, tests) {
+    const named = tests.filter(t => t.id);
+    const hints = swingPreview(r.ledger, named.map(t => t.id));
+    const rows = named.filter(t => t.id in hints).map(t => ({ t, d: hints[t.id] })).sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
+    if ( !rows.length ) return null;
+    // (Only likely or not to matter: its side going badly is often why it fell, so the hint overstates, by far.)
+    return rows.map(({ t, d }) => {
+      const likely = Math.abs(d) >= SWING_THRESHOLD;
+      const data = { name: this.spec?.combatants?.find(c => c.id === t.id)?.name ?? t.label, threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) };
+      return {
+        label: t.label, cls: "is-preview", width: 0, positive: d >= 0,
+        value: loc(likely ? "FASTFIGHTING.Swing.Likely" : "FASTFIGHTING.Swing.Unlikely"),
+        hint: localize(likely ? "FASTFIGHTING.Swing.LikelyHint" : "FASTFIGHTING.Swing.UnlikelyHint", data)
+      };
+    });
+  }
+
+  /**
    * What Swing factors measured, as Overview tiles (none until it has run, and none for a change within its noise): the
    * linchpin (the ally whose absence costs the party most), the key target (the foe whose absence helps it most), and
    * the rule the fight hinges on (10 points or more either way).
@@ -1096,17 +1138,22 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       }
     }
 
-    const swing = this.swing?.map(s => ({
-      ...s, deltaLabel: `${s.delta >= 0 ? "+" : ""}${(s.delta * 100).toFixed(1)}%`, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0,
-      noiseHint: s.noise ? localize("FASTFIGHTING.Swing.Noise", { n: s.runs }) : null
-    })) ?? null;
     // What the swing study can test, a pill each (a creature's side, the rules), and how many tests that comes to.
     const scope = this.#swingScope();
     const { tests, counts } = swingTests(spec, r, scope);
-    const swingPills = SWING_SCOPES.filter(k => counts[k] > 0).map(k => ({
-      id: k, label: loc(`FASTFIGHTING.Swing.Scope.${k}`), count: counts[k], active: scope[k] !== false
-    }));
+    const swing = this.swing ? this.swing.map(s => this.#swingRow(s)) : this.#swingPreview(r, tests);
+    // (A side's pill: its creatures in the encounter, a light ring; all of them on the map, a dark one; none, no ring.
+    // The rules': on or off.)
+    const swingPills = SWING_SCOPES.filter(k => (k === "rules" ? counts.rules : counts[k].all) > 0).map(k => {
+      const state = swingScopeState(scope, k);
+      const word = k === "rules" ? (state ? "on" : "off") : (state || "off");
+      return {
+        id: k, label: loc(`FASTFIGHTING.Swing.Scope.${k}`), active: !!state, ring: state === "all" ? "is-all" : state === "encounter" ? "is-encounter" : "",
+        count: !state ? null : String(k === "rules" ? counts.rules : counts[k][state]), hint: loc(`FASTFIGHTING.Swing.State.${k}.${word}`)
+      };
+    });
     const swingTestCount = localize("FASTFIGHTING.Swing.Tests", { n: tests.length });
+    const swingMany = tests.length > SWING_MANY ? localize("FASTFIGHTING.Swing.Many", { n: SWING_MANY }) : null;
 
     const sample = this.sample ? this.#sampleContext() : null;
 
@@ -1133,7 +1180,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         collapseNote: this.#collapseNote(r),
         rounds: r.rounds,
         histogram,
-        foes, atRisk, combatants, resources, swing, swingPills, swingTestCount, swingNone: !tests.length, sample
+        foes, atRisk, combatants, resources, swing, swingPills, swingTestCount, swingNone: !tests.length, sample,
+        swingHint: localize("FASTFIGHTING.Swing.Hint", { threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }), swingMany
       },
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
       storyStyle: this.storyStyle,
@@ -1903,7 +1951,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const key = target.dataset.scope;
     if ( !SWING_SCOPES.includes(key) ) return;
     const scope = this.#swingScope();
-    scope[key] = scope[key] === false;
+    scope[key] = nextSwingState(key, swingScopeState(scope, key));
     await game.settings.set(MODULE_ID, "swingScope", scope);
     this.render({ parts: ["right"] });
   }
@@ -1913,13 +1961,23 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.running = true;
     this.progress = 0;
     const scope = this.#swingScope();
-    this.swingCount = { done: 0, total: swingTests(this.spec, this.results, scope).tests.length * swingGuess(this.results, predictionSeconds(this.setup)) };
+    this.swingCount = { done: 0, total: swingGuess(this.results, swingTests(this.spec, this.results, scope).tests.length, predictionSeconds(this.setup)) };
+    this.swing = null;
     await this.render();
     let lastPaint = 0;
+    let lastRows = 0;
     try {
       this.swing = await swingFactors(this.spec, this.results, {
         seconds: predictionSeconds(this.setup),
         scope,
+        // (Each test as it stands, shown as it goes: the list redrawn twice a second at most.)
+        onUpdate: rows => {
+          this.swing = rows;
+          const now = performance.now();
+          if ( now - lastRows < 500 ) return;
+          lastRows = now;
+          this.render({ parts: ["right"] });
+        },
         onProgress: (p, done, total) => {
           this.progress = p;
           // (The fights so far, as the bar and the Run button fill: redrawn every 50 ms at most.)

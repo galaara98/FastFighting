@@ -10,6 +10,12 @@
  * Out: {type: "fights", id, fights: [{i, result}]} (runOne's summary), then {type: "done", id};
  *      or {type: "error", id, message}.
  *
+ * Or a chunk of a swing study's (batch-pool.js stream): fights of one of its battles for a moment, then back.
+ * In:  {type: "chunk", id, key, spec?, rules, seed, untilMs, deadline, lang}
+ *        key: which battle; its spec comes only the first time this worker is given it (kept, prepared, from then on).
+ *        Fights 0, 1, 2 ... with deriveSeed(seed, i), until untilMs have passed (or the deadline): one at least.
+ * Out: {type: "chunk", id, key, fights: [result]}; or {type: "error", id, message}.
+ *
  * The words: a fight's summary holds none, so labels the rules and the engine make for the log are left as their keys
  * (i18n.js localize does that without Foundry; standIn gives a helper's own unguarded game.i18n the same).
  */
@@ -63,6 +69,35 @@ async function runShare({ id, rules: ref, spec, seed, first, step, runs, deadlin
   }
 }
 
+/** The rules a chunk names, loaded once for the worker (by where they are and what they're made of). */
+async function rulesFor(ref, kept) {
+  const name = JSON.stringify([ref?.url, ref?.exportName, ref?.data ?? null]);
+  if ( !kept.rules.has(name) ) kept.rules.set(name, await loadRules(ref));
+  return kept.rules.get(name);
+}
+
+/** One chunk of a swing study: one battle's fights for a moment (its prepared battle kept for the next), then back. */
+async function runChunk({ id, key, spec, rules: ref, seed, untilMs = 0, deadline = null, lang }, post, kept) {
+  try {
+    standIn(lang);
+    let prep = kept.preps.get(key);
+    if ( !prep ) {
+      if ( !spec ) throw new Error(`FastFighting | no battle for ${key}`);
+      prep = prepareBattle(spec, await rulesFor(ref, kept));
+      kept.preps.set(key, prep);
+    }
+    const start = clock();
+    const fights = [];
+    for ( let i = 0; ; i++ ) {
+      fights.push(runOne(prep, deriveSeed(seed, i)));
+      if ( clock() - start >= untilMs || (deadline && clock() >= deadline) ) break;
+    }
+    post({ type: "chunk", id, key, fights });
+  } catch ( err ) {
+    post({ type: "error", id, message: String(err?.stack ?? err?.message ?? err) });
+  }
+}
+
 /**
  * A worker's side: give it each message as it comes, and it runs the batches one after another, posting what they do
  * through `post`. (A browser's Worker is wired below; a test wires node's worker_threads the same way.)
@@ -72,9 +107,10 @@ async function runShare({ id, rules: ref, spec, seed, first, step, runs, deadlin
  */
 export function batchHost(post, { flushMs = FLUSH_MS } = {}) {
   let queue = Promise.resolve();
+  const kept = { rules: new Map(), preps: new Map() };
   return message => {
-    if ( message?.type !== "batch" ) return;
-    queue = queue.then(() => runShare(message, post, flushMs));
+    if ( message?.type === "batch" ) queue = queue.then(() => runShare(message, post, flushMs));
+    else if ( message?.type === "chunk" ) queue = queue.then(() => runChunk(message, post, kept));
   };
 }
 

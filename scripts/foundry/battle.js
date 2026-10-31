@@ -4,7 +4,9 @@
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { replay } from "../engine/simulator.js";
 import { budgetFudges } from "../engine/trait-budget.js";
-import { budgetMs, swingRuns, swingShareMs, MAX_RUNS } from "../engine/run-budget.js";
+import { budgetMs, swingBudgetMs, MAX_RUNS } from "../engine/run-budget.js";
+import { createSwingStudy } from "../engine/swing-stats.js";
+import { clock } from "../engine/batch-worker.js";
 import { openPool, poolSize, poolThreads } from "../engine/batch-pool.js";
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
@@ -1051,11 +1053,27 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   return { spec, results, approach, threads: pool.used, signature };
 }
 
-/** The most combatants the swing factors leave out one at a time (in a bigger battle, the ones likeliest to matter). */
-const SWING_COMBATANTS = 12;
+/** A swing study of more tests than this takes long, and each test is less sure: the planner says so. */
+export const SWING_MANY = 35;
 
 /** What a swing study can test, by pill: the party's side, its foes, those who take no side, the rules. */
 export const SWING_SCOPES = Object.freeze(["friendly", "foes", "neutrals", "rules"]);
+
+/**
+ * A pill's state (scope: the GM's choices, swingTests): a side's creatures in the encounter ("encounter", the
+ * default), all of them on the map ("all"), or none (false); the rules on (true) or off (false).
+ */
+export function swingScopeState(scope, key) {
+  const v = scope?.[key];
+  if ( key === "rules" ) return v !== false;
+  return v === false ? false : v === "all" ? "all" : "encounter";
+}
+
+/** The state a pill goes to when it's clicked: in the encounter, all on the map, none, and round again. */
+export function nextSwingState(key, state) {
+  if ( key === "rules" ) return !state;
+  return state === "encounter" ? "all" : state === "all" ? false : "encounter";
+}
 
 /** The rules a swing study turns off, one at a time, and what each test is called. */
 const SWING_RULES = [["leadership", "FASTFIGHTING.Swing.NoLeadership"], ["morale", "FASTFIGHTING.Swing.NoMorale"], ["positioning", "FASTFIGHTING.Swing.NoPositioning"]];
@@ -1064,76 +1082,75 @@ const SWING_RULES = [["leadership", "FASTFIGHTING.Swing.NoLeadership"], ["morale
 const swingScopeOf = c => (c.side === SIDES.FRIENDLY ? "friendly" : HOSTILE_GROUPS.includes(c.side) ? "foes" : "neutrals");
 
 /**
- * The tests a swing study runs, for the pills chosen (scope: {friendly, foes, neutrals, rules}, each on unless false):
- * each creature left out, and each rule turned off. Creatures: the SWING_COMBATANTS that did most in the run (damage
- * and healing, then level), never one that took no part in nine fights in ten (leaving it out changes nothing).
- * @returns {{tests: {scope, label, id?, key?, make}[], counts: {[scope]: number}}}  counts: what each pill would test
+ * The tests a swing study runs, for the pills chosen (scope: {friendly, foes, neutrals, rules}, swingScopeState):
+ * each creature left out (those in the encounter, or all of a side's on the map), and each rule turned off. Never a
+ * creature that took no part in nine fights in ten (leaving it out changes nothing). Those that did most in the run
+ * first (damage and healing, then level).
+ * @returns {{tests: {scope, label, id?, key?, make}[], counts: {[scope]: {encounter, all}|number}}}  counts: what
+ *   each pill would test, a side's in the encounter and on the map; the rules', how many
  */
 export function swingTests(spec, baseline, scope = {}) {
   const did = c => (baseline?.combatants?.[c.id]?.meanDamage ?? 0) + (baseline?.combatants?.[c.id]?.meanHealing ?? 0);
   const candidates = spec.combatants.filter(c => (baseline?.combatants?.[c.id]?.pInvolved ?? 1) >= 0.1);
-  const counts = Object.fromEntries(SWING_SCOPES.map(k => [k, 0]));
-  for ( const c of candidates ) counts[swingScopeOf(c)] += 1;
+  const counts = Object.fromEntries(SWING_SCOPES.filter(k => k !== "rules").map(k => [k, { encounter: 0, all: 0 }]));
+  for ( const c of candidates ) {
+    const n = counts[swingScopeOf(c)];
+    n.all += 1;
+    if ( c.inEncounter !== false ) n.encounter += 1;
+  }
   const rules = SWING_RULES.filter(([key]) => spec.options[key]);
   counts.rules = rules.length;
-  const chosen = candidates.filter(c => scope[swingScopeOf(c)] !== false)
-    .sort((a, b) => did(b) - did(a) || (Number(b.level) || 0) - (Number(a.level) || 0) || (Number(b.hp?.max) || 0) - (Number(a.hp?.max) || 0))
-    .slice(0, SWING_COMBATANTS);
-  const tests = spec.combatants.filter(c => chosen.includes(c)).map(c => ({
+  const chosen = candidates.filter(c => {
+    const state = swingScopeState(scope, swingScopeOf(c));
+    return state === "all" || (state === "encounter" && c.inEncounter !== false);
+  }).sort((a, b) => did(b) - did(a) || (Number(b.level) || 0) - (Number(a.level) || 0) || (Number(b.hp?.max) || 0) - (Number(a.hp?.max) || 0));
+  const tests = chosen.map(c => ({
     scope: swingScopeOf(c), label: game.i18n.format("FASTFIGHTING.Swing.Without", { name: c.name }), id: c.id, side: c.side,
     make: s => ({ ...s, combatants: s.combatants.filter(x => x.id !== c.id) })
   }));
-  if ( scope.rules !== false ) {
+  if ( swingScopeState(scope, "rules") ) {
     for ( const [key, label] of rules ) tests.push({ scope: "rules", label: game.i18n.localize(label), key, make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
   }
   return { tests, counts };
 }
 
 /**
- * Swing factors: how much the party's odds of winning move without each creature, or with each rule turned off (the
- * pills chosen: swingTests). Each test gets a full study's share of three predictions' time (swingShareMs), and runs
- * no more fights than the run it's measured against (swingRuns), so fewer tests finish sooner. Each keeps its fights' odds, the party's losses and how sure it is:
- * `se`, the standard error of its change against the run's own (`noise`: within twice that, or under 2 points).
- * `onProgress(fraction, done, total)`: how far along by the tests' time, the fights done so far, and about how many
- * there will be (from the run's pace at first, then from the tests done so far).
- * @returns {Promise<object[]>} sorted by impact
+ * Swing factors: whether the party's odds of winning move by 2.5 points or more without each creature, or with each
+ * rule turned off (the pills chosen: swingTests), with as few fights as it takes to tell (engine/swing-stats.js): each
+ * test's fights handed out a chunk at a time to the one that needs them most (the pool's stream), until every test is
+ * settled or the study's time is up (swingBudgetMs: six predictions' time for twelve tests). `onUpdate(rows)` as each
+ * chunk comes back: every test as it stands. `onProgress(fraction, done, total)`: how far along by its time, the fights
+ * done so far, and about how many there will be (at the pace so far; at first, the run's).
+ * @returns {Promise<object[]>} each test as it ended (createSwingStudy rows), sorted by impact
  */
-export async function swingFactors(spec, baseline, { seconds = null, onProgress, scope = {} } = {}) {
+export async function swingFactors(spec, baseline, { seconds = null, onProgress, onUpdate, scope = {} } = {}) {
   const adapter = getAdapter();
-  const rules = adapter.rules;
-  const friendlyWin = r => r.sides.friendly?.pWin ?? 0;
-  const base = friendlyWin(baseline);
   const { tests } = swingTests(spec, baseline, scope);
-  const out = [];
   const time = seconds ?? setting("predictionTime");
-  const runs = swingRuns(baseline.runs);
-  const share = swingShareMs(tests.length, time);
-  // (How many fights a test will run, at first as the run went, and as the tests done so far went once there are some.)
-  const guess = Math.min(runs, Math.max(1, Math.round(baseline.runs * share / budgetMs(time))));
-  let ran = 0;
+  const budget = swingBudgetMs(tests.length, time);
+  const study = createSwingStudy(tests.map(t => ({ ...t, slot: t.id ?? `rule:${t.key}`, spec: t.make(spec), make: undefined })), baseline);
+  const start = clock();
+  const deadline = start + budget;
+  // (At first, the run's own pace: so many fights in the prediction's time.)
+  const firstPace = baseline.runs / budgetMs(time);
   const pool = fightPool(adapter);
   try {
-    for ( const [i, t] of tests.entries() ) {
-      const each = i ? ran / i : guess;
-      const told = (fraction, done) => {
-        const total = Math.max(ran + done, Math.round(ran + (tests.length - i) * Math.max(each, done)));
-        onProgress?.((i + Math.min(1, fraction)) / tests.length, ran + done, total);
-      };
-      const r = await pool.run(t.make(spec), rules, { runs, seed: 99, maxMs: share, onProgress: told });
-      const p = friendlyWin(r);
-      const se = Math.sqrt((p * (1 - p)) / Math.max(1, r.runs) + (base * (1 - base)) / Math.max(1, baseline.runs));
-      const delta = p - base;
-      out.push({
-        label: t.label, scope: t.scope, side: t.side ?? null, id: t.id ?? null, key: t.key ?? null, delta, se,
-        noise: Math.abs(delta) < Math.max(0.02, 2 * se), runs: r.runs, pWin: p, pAnyPcDead: r.pAnyPcDead, pAnyPcDowned: r.pAnyPcDowned
-      });
-      ran += r.runs;
-      onProgress?.((i + 1) / tests.length, ran, Math.round(ran + (tests.length - i - 1) * (ran / (i + 1))));
-      await new Promise(resolve => setTimeout(resolve, 0));
-    }
+    await pool.stream(adapter.rules, {
+      deadline,
+      seed: 99,
+      pick: () => study.pick(),
+      heard: (key, fights) => {
+        study.heard(key, fights);
+        const spent = clock() - start;
+        const done = study.fights;
+        const pace = spent > 1000 ? done / spent : firstPace;
+        onProgress?.(Math.min(1, spent / budget), done, study.settled ? done : Math.max(done, Math.round(done + pace * Math.max(0, deadline - clock()))));
+        onUpdate?.(study.rows());
+      }
+    });
   } finally {
     pool.close();
   }
-  return out.sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta));
+  return study.rows();
 }
 

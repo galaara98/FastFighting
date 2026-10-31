@@ -382,6 +382,12 @@ fight and more fights fit the time (`engine/batch-pool.js`, `engine/batch-worker
   (`has` false, `localize` and `format` the key), as the core's `localize` does without Foundry.
 - **The spec** goes to each worker as a structured clone: plain data, no functions (`Infinity`, `undefined`, Sets and
   Maps are fine). One that can't be sent runs on the main thread.
+- **A swing study's fights** (`pool.stream`, `engine/swing-stats.js createSwingStudy`) go a chunk at a time to whichever
+  worker is free: about `CHUNK_MS` (150 ms) of one test's fights, then back for what the study needs most then. A worker
+  is sent a test's spec only the first time (batch-worker.js keeps it prepared, by its key), so a big battle's spec
+  (megabytes, with its walls) isn't copied again each chunk. Each chunk's fights have their own seed. Without workers,
+  the same chunks run on the main thread. The main run's fights are kept beside its numbers as `results.ledger` (not
+  enumerable: never saved or copied), for the study's margins and its hints.
 - **The pool:** a share of `navigator.hardwareConcurrency`, rounded: this computer's **Background worker share**
   (`plannerThreadShare`, a client setting, 10% to 50%, `THREAD_SHARE`; 35% by default, leaving room to go up to half, about
   the real cores where each counts twice); no more than `navigator.deviceMemory` (GB) where the browser gives it; `MOST_WORKERS` (16) at most,

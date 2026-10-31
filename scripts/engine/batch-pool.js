@@ -17,7 +17,7 @@
  */
 import { MODULE_ID } from "../constants.js";
 import { prepareBattle, runOne, runBatch } from "./simulator.js";
-import { createAggregator } from "./aggregate.js";
+import { createAggregator, finished } from "./aggregate.js";
 import { deriveSeed, randomSeed } from "./rng.js";
 import { clock } from "./batch-worker.js";
 
@@ -52,6 +52,35 @@ export function poolSize(cores = globalThis.navigator?.hardwareConcurrency, memo
  * batch then runs here. (A fight under way is finished first; even a very big one takes a second or two.)
  */
 export const GRACE_MS = 20000;
+
+/**
+ * How long a swing study's chunk runs (ms): a worker's fights of one battle before it comes back for what's needed
+ * most now (stream). A fight longer than that is one fight a chunk.
+ */
+export const CHUNK_MS = 150;
+
+/**
+ * A stream's fights on this thread (no workers, or they failed): a chunk at a time, each battle prepared once, the
+ * browser let draw between chunks.
+ */
+async function streamHere(rules, { pick, heard, chunkMs, deadline, seed, kept = new Map(), from = 0 }) {
+  let chunks = from;
+  while ( !(deadline && clock() >= deadline) ) {
+    const job = pick();
+    if ( !job ) return;
+    if ( !kept.has(job.key) ) kept.set(job.key, prepareBattle(job.spec, rules));
+    const prep = kept.get(job.key);
+    const chunkSeed = deriveSeed(seed, chunks++);
+    const fights = [];
+    const start = clock();
+    for ( let i = 0; ; i++ ) {
+      fights.push(runOne(prep, deriveSeed(chunkSeed, i)));
+      if ( clock() - start >= chunkMs || (deadline && clock() >= deadline) ) break;
+    }
+    heard(job.key, fights);
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+}
 
 /** The worker's script, beside this one: Foundry serves both under the module's own path, whatever its route prefix. */
 const WORKER_URL = new URL("./batch-worker.js", import.meta.url);
@@ -136,7 +165,7 @@ export function openPool(ref, { size = poolSize(), makeWorker = null, lang = "en
           clearTimeout(watchdog);
           signal?.removeEventListener?.("abort", stop);
           onProgress?.(1, next);
-          resolve({ ...agg.finish(), seed });
+          resolve(finished(agg, { seed }));
         };
         // (Workers that failed: the batch here instead, in the time it has left; with these rules, here from now on.)
         const fail = why => {
@@ -197,6 +226,102 @@ export function openPool(ref, { size = poolSize(), makeWorker = null, lang = "en
         if ( deadline ) watchdog = setTimeout(() => fail("no answer from the workers"), maxMs + graceMs);
         if ( signal?.aborted ) stop();
         else signal?.addEventListener?.("abort", stop, { once: true });
+      });
+    },
+    /**
+     * A swing study's fights (swing-stats.js createSwingStudy), a chunk at a time to whichever worker is free: each
+     * chunk the battle `pick()` says needs fights most now ({key, spec}, or null for none), its fights for CHUNK_MS or
+     * so (one at least), told to `heard(key, fights)` as it comes back. A worker is sent a battle's spec only the first
+     * time (it keeps it, prepared). Done when nothing's out and `pick()` gives nothing, or the deadline (clock() ms)
+     * has passed and what's out is back. Each chunk's fights have a seed of their own (from `seed`).
+     * @param {object} rules   the system's rules, as this thread has them (for its fights here, without workers)
+     */
+    stream(rules, { pick, heard, chunkMs = CHUNK_MS, deadline = null, seed = randomSeed() } = {}) {
+      const opts = { pick, heard, chunkMs, deadline, seed };
+      if ( !onWorkers(ref, makeWorker) ) {
+        pool.used = 1;
+        return streamHere(rules, opts);
+      }
+      try {
+        while ( workers.length < size ) workers.push((makeWorker ?? webWorker)());
+      } catch ( err ) {
+        failed.add(ref.url);
+        console.warn(`${MODULE_ID} | no background workers for the fights: they run here`, err);
+        end();
+        pool.used = 1;
+        return streamHere(rules, opts);
+      }
+      const crew = workers.slice();
+      const id = ++batches;
+      pool.used = crew.length;
+      const knows = crew.map(() => new Set());
+      const idle = crew.map(() => true);
+      let out = 0;
+      let chunks = 0;
+      return new Promise((resolve, reject) => {
+        let settled = false;
+        let watchdog = null;
+        const finish = () => {
+          if ( settled ) return;
+          settled = true;
+          clearTimeout(watchdog);
+          resolve();
+        };
+        // (Workers that failed: the rest of the study here, in the time it has left; with these rules, here from now on.)
+        const fail = why => {
+          if ( settled ) return;
+          settled = true;
+          clearTimeout(watchdog);
+          failed.add(ref.url);
+          console.warn(`${MODULE_ID} | the fights on background workers failed: they run here`, why);
+          end();
+          pool.used = 1;
+          streamHere(rules, { ...opts, from: chunks }).then(resolve, reject);
+        };
+        const give = k => {
+          if ( deadline && clock() >= deadline ) return;
+          const job = pick();
+          if ( !job ) return;
+          const message = { type: "chunk", id, key: job.key, rules: ref, seed: deriveSeed(seed, chunks++), untilMs: chunkMs, deadline, lang };
+          if ( !knows[k].has(job.key) ) {
+            message.spec = job.spec;
+            knows[k].add(job.key);
+          }
+          idle[k] = false;
+          out += 1;
+          crew[k].postMessage(message);
+        };
+        const fill = () => {
+          try {
+            for ( let k = 0; k < crew.length; k++ ) if ( idle[k] ) give(k);
+          } catch ( err ) {
+            // (A spec that can't be sent to a worker: a function in it, say.)
+            return fail(err);
+          }
+          if ( !out ) finish();
+        };
+        crew.forEach((w, k) => {
+          w.onmessage = event => {
+            const message = event.data;
+            if ( settled || message?.id !== id ) return;
+            if ( message.type === "error" ) return fail(message.message);
+            if ( message.type !== "chunk" ) return;
+            out -= 1;
+            idle[k] = true;
+            try {
+              heard(message.key, message.fights);
+            } catch ( err ) {
+              settled = true;
+              clearTimeout(watchdog);
+              return reject(err);
+            }
+            fill();
+          };
+          w.onerror = event => fail(event?.message || event);
+          w.onmessageerror = event => fail(event);
+        });
+        if ( deadline ) watchdog = setTimeout(() => fail("no answer from the workers"), Math.max(0, deadline - clock()) + chunkMs + graceMs);
+        fill();
       });
     },
     /** The run is over: its workers ended. */
