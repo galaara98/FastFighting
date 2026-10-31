@@ -71,7 +71,7 @@
     {{#if focus.none}}<p class="ff-hint ff-vside-hint">{{localize "FASTFIGHTING.Battle.Net.FocusHint"}}</p>{{/if}}
 
     {{#if focus.elsewhere}}
-    <div class="ff-battle-who" data-node="token:{{focus.tokenId}}"><img src="{{focus.img}}" alt=""><div><h3>{{focus.name}}</h3><span class="ff-battle-meta">{{localize "FASTFIGHTING.Battle.Net.NotInBattle"}}</span></div></div>
+    <div class="ff-battle-who" data-node="token:{{focus.tokenId}}"><button type="button" class="ff-battle-face" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}" aria-label="{{localize "FASTFIGHTING.Planner.PanTo"}}"><img src="{{focus.img}}" alt=""></button><div><h3>{{focus.name}}</h3><span class="ff-battle-meta">{{localize "FASTFIGHTING.Battle.Net.NotInBattle"}}</span></div></div>
     <button type="button" class="ff-btn" data-action="bringIn" data-token="{{focus.tokenId}}"><i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> {{localize "FASTFIGHTING.Battle.BringIn"}}</button>
     {{/if}}
 
@@ -92,7 +92,7 @@
     {{#if focus.creature}}
     <div data-creature="{{focus.id}}" class="ff-battle-focus">
       <div class="ff-battle-who ff-t-{{focus.team.short}}">
-        <img src="{{focus.img}}" alt="">
+        <button type="button" class="ff-battle-face" data-action="panToken" data-tooltip="{{localize "FASTFIGHTING.Planner.PanTo"}}" aria-label="{{localize "FASTFIGHTING.Planner.PanTo"}}"><img src="{{focus.img}}" alt=""></button>
         <div>
           <h3>{{focus.name}}{{#if focus.player}} <i class="fa-solid fa-user" data-tooltip="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}" aria-label="{{localize "FASTFIGHTING.Battle.PlayerRuns"}}"></i>{{/if}}</h3>
           <span class="ff-battle-meta">{{focus.side}} · {{focus.status}} · {{focus.hp}}{{#if focus.waiting}} · {{localize "FASTFIGHTING.Battle.NotInFight"}}{{/if}}</span>

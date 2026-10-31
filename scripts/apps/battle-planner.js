@@ -19,6 +19,7 @@ import {
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature, preparePlayers
 } from "../foundry/tactics.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
+import { showSheet, panToToken } from "../foundry/sheet-tools.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, swingTests, SWING_SCOPES, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, repickCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
@@ -217,6 +218,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // Real Now would, and plays its first turn if that's FastFighting's.)
     this.combatHook = Hooks.on("updateCombat", (combat, changes, options, userId) => {
       if ( combat.started && "round" in changes && this.readyForVantage(combat) ) this.#goLive({ begin: true, began: true });
+    });
+    // (The portrait in Details double-clicked: its sheet, brought to the front.)
+    this.element.addEventListener("dblclick", event => {
+      const id = event.target.closest?.(".ff-detail-portrait")?.closest("[data-token-id]")?.dataset.tokenId;
+      if ( !id ) return;
+      event.preventDefault();
+      showSheet(canvas.tokens.get(id)?.actor);
     });
     // (Told when a character's reactions may have changed: sheet-watch.js. Only the creature in Details shows them.)
     this.unwatchReactions = showsReactions({
@@ -1689,11 +1697,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   static #onPanToken(event, target) {
-    const id = target.closest("[data-token-id]")?.dataset.tokenId;
-    const token = canvas.tokens.get(id);
-    if ( !token ) return;
-    token.control({ releaseOthers: true });
-    canvas.animatePan({ x: token.center.x, y: token.center.y, duration: 250 });
+    panToToken(canvas.tokens.get(target.closest("[data-token-id]")?.dataset.tokenId));
   }
 
   static async #onRefresh() {

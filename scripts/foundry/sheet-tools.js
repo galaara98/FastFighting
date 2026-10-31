@@ -178,3 +178,20 @@ export const tokenIdIn = uuid => (typeof uuid === "string" && uuid.includes("Tok
 
 /** The id at the end of a uuid ("Scene.x.Token.y": "y"), or the id itself; null for none. */
 export const idFromUuid = ref => (typeof ref === "string" && ref ? ref.split(".").pop() : null);
+
+/** An actor's sheet: opened, or (open already) brought to the front, and out of its minimized state. */
+export function showSheet(actor) {
+  const sheet = actor?.sheet;
+  if ( !sheet ) return;
+  if ( !sheet.rendered ) return sheet.render(true);
+  sheet.maximize?.();
+  if ( sheet.bringToFront ) sheet.bringToFront();
+  else sheet.bringToTop?.();
+}
+
+/** A token on the map shown: selected alone, and the view panned to it. */
+export function panToToken(token) {
+  if ( !token ) return;
+  token.control({ releaseOthers: true });
+  canvas.animatePan({ x: token.center.x, y: token.center.y, duration: 250 });
+}

@@ -489,7 +489,8 @@ label.is-disabled, .form-group.is-disabled { opacity: 0.5; }
 .ff-battle-add-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 4px; }
 .ff-away-timer { display: inline-flex; align-items: center; gap: 0.25em; margin-top: 0.2rem; font-size: 0.85em; font-variant-numeric: tabular-nums; color: var(--ff-text-dim); }
 .ff-add-line .hint { margin: 0 0 0.4rem; }
-.ff-battle-who img { width: 44px; height: 44px; border: none; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 3px var(--ff-tc, var(--ff-muted)); }
+.ff-battle-face { flex: none; width: 44px; height: 44px; min-height: 0; margin: 0; padding: 0; overflow: hidden; border: none; border-radius: 50%; background: none; box-shadow: 0 0 0 3px var(--ff-tc, var(--ff-muted)); }
+.ff-battle-face img { width: 100%; height: 100%; border: none; object-fit: cover; }
 .ff-battle-meta { display: block; font-size: 0.85em; opacity: 0.8; }
 .ff-battle-automate { display: flex; align-items: center; gap: 0.3em; font-size: 0.85em; }
 

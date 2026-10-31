@@ -32,6 +32,7 @@ import { wheelSideways } from "./sideways.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
+import { showSheet, panToToken } from "../foundry/sheet-tools.js";
 import {
   liveBattle, playedElsewhere, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
@@ -131,7 +132,7 @@ function teamBadge(key) {
 
 
 /** The Battle Vantage's buttons that only change what it shows (its tabs, the creature in focus): not using FastFighting. */
-const LOOKS = new Set(["sideTab", "focusCreature"]);
+const LOOKS = new Set(["sideTab", "focusCreature", "panToken"]);
 
 export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -142,6 +143,7 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     actions: {
       sideTab: BattleVantage.#onSideTab,
       focusCreature: BattleVantage.#onFocusCreature,
+      panToken: BattleVantage.#onPanToken,
       continue: BattleVantage.#onContinue,
       rewind: BattleVantage.#onRewind,
       play: BattleVantage.#onPlay,
@@ -652,6 +654,14 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
   static #onFocusCreature(event, target) {
     const id = target.dataset.creature;
     if ( id ) this.#focusOn(id);
+  }
+
+  /** The creature in Details clicked: its token selected and shown on the map, when the map is the battle's. */
+  static #onPanToken(event, target) {
+    const b = liveBattle();
+    const id = target.closest("[data-node]")?.dataset.node ?? target.closest("[data-creature]")?.dataset.creature ?? null;
+    const tokenId = tokenOf(b, id);
+    if ( tokenId && canvas.scene?.id === b.scene.id ) panToToken(canvas.tokens?.get(tokenId));
   }
 
   static async #onAddLine(event, target) {
@@ -1223,16 +1233,6 @@ function panelOf(b, net, nodes, edges, focus, { name, docOf, sideLabel }) {
     setAside: decides ? [] : setAside, held: decides ? [] : held,
     team: teamBadge(key), teams, roles, notWith, controlled: controller ? fmt("FASTFIGHTING.Battle.Net.Controlled", { name: controller.spec.name }) : ""
   };
-}
-
-/** An actor's sheet: opened, or (open already) brought to the front, and out of its minimized state. */
-function showSheet(actor) {
-  const sheet = actor?.sheet;
-  if ( !sheet ) return;
-  if ( !sheet.rendered ) return sheet.render(true);
-  sheet.maximize?.();
-  if ( sheet.bringToFront ) sheet.bringToFront();
-  else sheet.bringToTop?.();
 }
 
 /** A node's token on the map: a creature's, or one that isn't in the battle ("token:<id>"). */
