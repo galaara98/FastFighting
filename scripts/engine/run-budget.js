@@ -18,8 +18,6 @@ export const PREDICTION_SECONDS = Object.freeze({ default: 10, min: 6, max: 60 }
 export const MAX_RUNS = 20000;
 /** Fewer fights than this, and the odds are rough (±5% and worse): the planner says so. */
 export const ROUGH_RUNS = 100;
-/** The most fights for each of the swing factors' tests. */
-export const SWING_RUNS = 300;
 /** A fight's work for each pair of creatures (ms), in a fight of six rounds. */
 export const FIGHT_MS_PER_PAIR = 0.031;
 
@@ -51,11 +49,11 @@ export function paceOf(n, seconds, runs, threads = 1) {
   return budgetMs(seconds) / (runs / (threads >= 1 ? Math.floor(threads) : 1)) / fightMs(n);
 }
 
-/** The most tests a swing study runs: twelve creatures left out, three rules turned off. */
-export const SWING_FULL = 15;
-
 /**
- * Each of the swing factors' tests' time (ms): a full study's share of three predictions' time, so a study of fewer
- * tests (the planner's pills) finishes sooner, each test as sure as in a full one.
+ * Each of the swing factors' tests: as many fights as the prediction it's measured against ran, so it's as sure as that
+ * (MAX_RUNS at most, one at least).
  */
-export const swingShareMs = (tests, seconds) => 3 * budgetMs(seconds) / Math.max(SWING_FULL, tests);
+export const swingRuns = baselineRuns => Math.max(1, Math.min(MAX_RUNS, Math.round(Number(baselineRuns) || 1)));
+
+/** Each swing test's time (ms) at most, should its fights go slower than the prediction's: twice the prediction time. */
+export const swingCapMs = seconds => 2 * budgetMs(seconds);

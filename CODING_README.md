@@ -383,8 +383,8 @@ fight and more fights fit the time (`engine/batch-pool.js`, `engine/batch-worker
 - **The spec** goes to each worker as a structured clone: plain data, no functions (`Infinity`, `undefined`, Sets and
   Maps are fine). One that can't be sent runs on the main thread.
 - **The pool:** a share of `navigator.hardwareConcurrency`, rounded: this computer's **Background worker share**
-  (`plannerThreadShare`, a client setting, 10% to 50%, `THREAD_SHARE`; half by default, about the real cores where each
-  counts twice); no more than `navigator.deviceMemory` (GB) where the browser gives it; `MOST_WORKERS` (16) at most,
+  (`plannerThreadShare`, a client setting, 10% to 50%, `THREAD_SHARE`; 35% by default, leaving room to go up to half, about
+  the real cores where each counts twice); no more than `navigator.deviceMemory` (GB) where the browser gives it; `MOST_WORKERS` (16) at most,
   one at least (`poolSize`; `foundry/battle.js` `fightWorkers`). Each worker builds its own `prepareBattle` and runs an interleaved share of the fight indices,
   fight i with `deriveSeed(seed, i)`; it posts the fights it has done every `FLUSH_MS` (25 ms). The main thread feeds the
   aggregator in index order, so N fights give exactly what `runBatch` and `runBatchSync` give for N fights with that

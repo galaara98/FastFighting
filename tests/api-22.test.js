@@ -122,18 +122,18 @@ describe("where a helper's rules are, for the workers (adapter.workerRules)", ()
     await expect(loadRules({ url, exportName: "nothing" })).rejects.toThrow();
   });
 
-  test("how many: a share of the threads (half by default), a GB each, sixteen at most, one at least", () => {
+  test("how many: a share of the threads (35% by default), a GB each, sixteen at most, one at least", () => {
     expect(MOST_WORKERS).toBe(16);
-    expect(THREAD_SHARE).toEqual({ min: 0.1, max: 0.5, default: 0.5 });
-    // (Half the threads, rounded: about the real cores where each counts twice.)
-    expect([1, 2, 3, 4, 5, 8, 12, 16, 32, 64].map(n => poolSize(n, undefined))).toEqual([1, 1, 2, 2, 3, 4, 6, 8, 16, 16]);
+    expect(THREAD_SHARE).toEqual({ min: 0.1, max: 0.5, default: 0.35 });
+    // (35% of the threads, rounded: room to go up to half, about the real cores where each counts twice.)
+    expect([1, 2, 3, 4, 5, 8, 12, 16, 32, 64].map(n => poolSize(n, undefined))).toEqual([1, 1, 1, 1, 2, 3, 4, 6, 11, 16]);
     // (The share the settings give, kept to 10% to 50%: less of the computer for the fights.)
-    expect([0.1, 0.25, 0.5, 0.9, 0, "half"].map(s => poolSize(32, undefined, s))).toEqual([3, 8, 16, 16, 3, 16]);
+    expect([0.1, 0.25, 0.5, 0.9, 0, "half"].map(s => poolSize(32, undefined, s))).toEqual([3, 8, 16, 16, 3, 11]);
     expect(poolSize(8, undefined, 0.1)).toBe(1);
     // (Where the browser doesn't say: two threads, one worker.)
     expect([0, "many", null].map(n => poolSize(n, undefined))).toEqual([1, 1, 1]);
     // (A worker for each GB of memory at most, where the browser says; one at least.)
-    expect([32, 8, 4, 2, 0.5, 0, "lots"].map(gb => poolSize(32, gb))).toEqual([16, 8, 4, 2, 1, 16, 16]);
+    expect([32, 8, 4, 2, 0.5, 0, "lots"].map(gb => poolSize(32, gb))).toEqual([11, 8, 4, 2, 1, 11, 11]);
     expect(poolThreads(FIXTURE, { size: 3, makeWorker: () => ({}) })).toBe(3);
   });
 

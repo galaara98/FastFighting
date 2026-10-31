@@ -29,7 +29,7 @@ export const MOST_WORKERS = 16;
  * Background worker share): half at most, about the real cores where each counts twice (hyperthreading), so no core
  * runs two fights at once and one is left for the screen.
  */
-export const THREAD_SHARE = Object.freeze({ min: 0.1, max: 0.5, default: 0.5 });
+export const THREAD_SHARE = Object.freeze({ min: 0.1, max: 0.5, default: 0.35 });
 
 /**
  * How many workers: `share` of the threads the browser says the computer has (THREAD_SHARE's bounds), rounded; no more

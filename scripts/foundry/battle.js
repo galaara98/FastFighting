@@ -4,7 +4,7 @@
 import { MODULE_ID, SIDES, ALLEGIANCE, DISPOSITION_SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, TRAITS, clamp } from "../constants.js";
 import { replay } from "../engine/simulator.js";
 import { budgetFudges } from "../engine/trait-budget.js";
-import { budgetMs, swingShareMs, MAX_RUNS, SWING_RUNS } from "../engine/run-budget.js";
+import { budgetMs, swingRuns, swingCapMs, MAX_RUNS } from "../engine/run-budget.js";
 import { openPool, poolSize, poolThreads } from "../engine/batch-pool.js";
 
 /** How long a battle's prediction runs (seconds): its plan's, else the world's Prediction time. */
@@ -1091,8 +1091,8 @@ export function swingTests(spec, baseline, scope = {}) {
 
 /**
  * Swing factors: how much the party's odds of winning move without each creature, or with each rule turned off (the
- * pills chosen: swingTests). Each test gets a full study's share of three predictions' time (swingShareMs), SWING_RUNS
- * fights at most, so fewer tests finish sooner. Each keeps its fights' odds, the party's losses and how sure it is:
+ * pills chosen: swingTests). Each test runs as many fights as the run it's measured against (swingRuns), in twice the
+ * prediction time at most (swingCapMs), so fewer tests finish sooner. Each keeps its fights' odds, the party's losses and how sure it is:
  * `se`, the standard error of its change against the run's own (`noise`: within twice that, or under 2 points).
  * @returns {Promise<object[]>} sorted by impact
  */
@@ -1103,11 +1103,12 @@ export async function swingFactors(spec, baseline, { seconds = null, onProgress,
   const base = friendlyWin(baseline);
   const { tests } = swingTests(spec, baseline, scope);
   const out = [];
-  const share = swingShareMs(tests.length, seconds ?? setting("predictionTime"));
+  const runs = swingRuns(baseline.runs);
+  const cap = swingCapMs(seconds ?? setting("predictionTime"));
   const pool = fightPool(adapter);
   try {
     for ( const [i, t] of tests.entries() ) {
-      const r = await pool.run(t.make(spec), rules, { runs: SWING_RUNS, seed: 99, maxMs: share });
+      const r = await pool.run(t.make(spec), rules, { runs, seed: 99, maxMs: cap });
       const p = friendlyWin(r);
       const se = Math.sqrt((p * (1 - p)) / Math.max(1, r.runs) + (base * (1 - base)) / Math.max(1, baseline.runs));
       const delta = p - base;

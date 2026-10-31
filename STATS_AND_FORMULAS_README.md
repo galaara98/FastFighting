@@ -1802,7 +1802,7 @@ Decides how many simulated fights the planner runs before it shows the odds.
 - Time: **Prediction time (seconds)** (`predictionTime`), default 10, range 6–60. The **Seconds** slider in the
   planner's top bar overrides it for one battle.
 - Threads: where the system's helper allows it, the fights run on background workers, round(threads × share) of them (share:
-  **Background worker share**, 10% to 50%, 50% by default, each computer its own), no more than the GB of memory where
+  **Background worker share**, 10% to 50%, 35% by default, each computer its own), no more than the GB of memory where
   the browser says, 16 at most and at least 1 (`MOST_WORKERS`, `THREAD_SHARE`, `poolSize`), several at once; worker w of n runs fights w, w + n, w + 2n ... The time
   counts from when they're sent the battle. Each starts no fight once it's up and finishes the one under way; fights
   done past the first one missing are left out, so the result is always fights 0 to N − 1, the same as on one thread.
@@ -1898,7 +1898,7 @@ Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engin
 
 ### Swing factors
 
-Search: swing factors, Compute swing factors, what moves the odds, Without, impact, SWING_RUNS, linchpin, key target, hinges on, noise, What to test
+Search: swing factors, Compute swing factors, what moves the odds, Without, impact, swingRuns, linchpin, key target, hinges on, noise, What to test
 
 Shows how much each combatant and each option moves the Friendly Team's win chance.
 
@@ -1907,8 +1907,9 @@ Shows how much each combatant and each option moves the Friendly Team's win chan
 - Tests: the battle without each of up to 12 creatures from the pills chosen (those that did most in the main run
   first: damage plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with
   Leadership, Morale, and Terrain & positioning each turned off (only those that are on).
-- Each test runs up to 300 fights (`SWING_RUNS`) in 3 × prediction time ÷ 15 (`SWING_FULL`, the most tests a study
-  has), seed 99 (on the background workers where the prediction runs on them). A study of fewer tests finishes sooner.
+- Each test runs as many fights as the main run did (`swingRuns`), so each is as sure as it; seed 99, on the
+  background workers where the prediction runs on them. Each has twice the prediction time at most (`swingCapMs`),
+  should its fights go slower. A study of fewer tests finishes sooner.
 - Each shows the Friendly Team's win chance in the test minus the main run's, largest change first.
 - Noise: a change under 2 points, or under twice its standard error (√(p(1−p)/n) of the test and of the main run,
   combined), may be chance. It's shown faint and never makes an Overview tile.
@@ -1916,9 +1917,10 @@ Shows how much each combatant and each option moves the Friendly Team's win chan
   **Key target** (the foe whose absence raises them most), and what the fight **Hinges on** (a rule moving them 10
   points or more).
 
-Example: 6 seconds give each test 1.2 seconds, so 10 tests take 12 seconds at most.
+Example: a main run of 186 fights in 10 seconds gives each test 186 fights, about 10 seconds each, so 10 tests take
+about 100 seconds (200 at most).
 
-Code: `foundry/battle.js` `swingTests`, `swingFactors`; `engine/run-budget.js` `swingShareMs`.
+Code: `foundry/battle.js` `swingTests`, `swingFactors`; `engine/run-budget.js` `swingRuns`, `swingCapMs`.
 
 ### Initiative and turn order
 
