@@ -197,26 +197,32 @@ export function panToToken(token) {
 }
 
 /**
- * A token's HUD (Foundry's right-click menu) brought up at a point on the screen, above any window there: the map
- * panned (and zoomed in, if need be) so the token sits under the point, the HUD's layer lifted over the windows while it's open, and closed by
- * any click outside it (Foundry closes it only for clicks on the map).
+ * A token's HUD (Foundry's right-click menu) brought up at a point on the screen, above any window there, the map left
+ * where it is: the HUD put at the point instead of on its token, and no smaller than at 100% zoom, the size it's made
+ * for; its layer lifted over the windows while it's open; closed by any click outside it (Foundry closes it only for
+ * clicks on the map).
  */
 export async function tokenHudAt(token, { x, y }) {
   if ( !token || token.scene !== canvas.scene ) return;
-  // (The HUD is as big as the map's zoom makes it: zoomed in to 100% at least, the size it's made for.)
-  const scale = Math.max(canvas.stage.scale.x, Math.min(CONFIG.Canvas.maxZoom ?? 3, 1));
-  const [width, height] = canvas.screenDimensions;
-  canvas.pan({ x: token.center.x + (width / 2 - x) / scale, y: token.center.y + (height / 2 - y) / scale, scale });
   token.control({ releaseOthers: true });
+  const hud = canvas.hud.token;
+  const at = canvas.canvasCoordinatesFromClient({ x, y });
+  // (Where Foundry puts it, every time it's drawn: on its token, at the map's zoom. Here, centred on the point.)
+  hud._updatePosition = function(position) {
+    position = hud.constructor.prototype._updatePosition.call(this, position);
+    const scale = position.scale * Math.max(1, 1 / canvas.stage.scale.x);
+    return Object.assign(position, { left: at.x - (position.width * scale) / 2, top: at.y - (position.height * scale) / 2, scale });
+  };
   const layer = document.getElementById("hud");
   const outside = event => {
-    if ( !event.target.closest?.("#hud") ) canvas.hud.token.close();
+    if ( !event.target.closest?.("#hud") ) hud.close();
   };
   Hooks.once("closeTokenHUD", () => {
+    delete hud._updatePosition;
     if ( layer ) layer.style.zIndex = "";
     document.removeEventListener("pointerdown", outside, true);
   });
   if ( layer ) layer.style.zIndex = String((foundry.applications.api.ApplicationV2._maxZ ?? 100) + 1);
   document.addEventListener("pointerdown", outside, true);
-  await canvas.hud.token.bind(token);
+  await hud.bind(token);
 }
