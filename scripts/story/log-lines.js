@@ -12,6 +12,19 @@ export const logTerm = (key, data = null) => t(key, data);
 
 /** One phrase, in the reader's language. */
 const t = (key, data = null) => localize(`FASTFIGHTING.Log.${key}`, data);
+
+/** An aptitude in words, at its band (0 to 4): "very strong", "unwise". */
+export const aptitudeWord = (key, band) => localize(`FASTFIGHTING.Aptitude.${key}.${band}`);
+
+/**
+ * What a critical size-up learned (a "lore" event): what its target is best at and worst at, in words; one aptitude
+ * when it's as good at all of them. `f`: the names to use (the story's, linked; else the event's own).
+ */
+export function loreLine(e, f = e) {
+  if ( !e.best || !e.worst ) return "";
+  if ( e.best.key === e.worst.key ) return localize("FASTFIGHTING.Story.LoreEven", { actor: f.actor, target: f.target, trait: aptitudeWord(e.best.key, e.best.band) });
+  return localize("FASTFIGHTING.Story.Lore", { actor: f.actor, target: f.target, best: aptitudeWord(e.best.key, e.best.band), worst: aptitudeWord(e.worst.key, e.worst.band) });
+}
 /** A hold's name: the condition's word (its key, where there's none). */
 const holdName = key => {
   const word = localize(`FASTFIGHTING.Condition.${key}`);
@@ -196,6 +209,7 @@ function baseLine(e) {
       return t("Study", { ...a, kin: e.kin ? t("StudyKin", { kin: e.kin, target: e.target }) : "", roll, pays });
     }
     case "observe": return t("Observe", { actor: e.actor, targets: listJoin(e.targets ?? []) });
+    case "lore": return loreLine(e);
     case "command":
       if ( e.lost ) return t("CommandLost", { after: e.from ? t("CommandAfter", { name: e.from }) : "" });
       return e.back ? t("CommandBack", { actor: e.actor, role: role(e.role) }) : t("CommandTakes", { actor: e.actor, role: role(e.role), from: e.from ? t("CommandFrom", { name: e.from }) : "" });

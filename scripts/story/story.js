@@ -13,7 +13,7 @@ import { damageFamily } from "./families.js";
 import { conditionOf } from "./master.js";
 import { desireBand, DESIRE_BAND_KEYS } from "../engine/behavior/desire.js";
 import { listJoin, listItems, localize, hasWords, distanceText, escapeHtml as esc, escapeRegExp } from "../i18n.js";
-import { logLine, endLine, logTerm, concessionText, goodsText, askText } from "./log-lines.js";
+import { logLine, endLine, logTerm, concessionText, goodsText, askText, loreLine } from "./log-lines.js";
 import { healthCallouts, healthLine } from "./health.js";
 
 export { concessionText };
@@ -489,6 +489,7 @@ function narrate(e, roll, rel, fill) {
     case "holdGround": return roll(e.ordered ? "event.holdOrdered" : "event.holdGround", { ...f, target: e.by ?? "" });
     case "study": return roll(e.worked === false ? "event.studyFails" : "maneuver.assess", f);
     case "observe": return roll("event.observe", { ...f, targets: fewNames(e.targets ?? []) });
+    case "lore": return loreLine(e, f);
     case "shareLore": return roll("event.shareLore", { ...f, allies: listJoin(e.with ?? []) });
     case "scheme": return roll("event.scheme", f);
     case "command":
@@ -1214,7 +1215,8 @@ export function storyBeats(result, spec, style, { tables, seed = 1, damageType =
       }
       for ( const e of beat.events ) {
         if ( !mentions(e) ) continue;
-        if ( FALLS.has(e.type) && !secretEvent(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
+        // (A fall, and what a critical size-up learned, each a line of its own.)
+        if ( (FALLS.has(e.type) || e.type === "lore") && !secretEvent(e) ) rows.push(`<li>${bold(esc(logLine(e)))}</li>`);
         const c = health.get(e);
         if ( c && !secretHealth(e, c) ) rows.push(`<li>${bold(esc(labelWord("Health", { target: c.name, state: c.label })))}</li>`);
       }

@@ -4,10 +4,11 @@ import { createRun, boostBonus, modsAgainst, checkRoll, studyBonus } from "../sc
 import { applyOutcome, spendEdges } from "../scripts/engine/behavior/effects.js";
 import { bestPitch } from "../scripts/engine/behavior/talk.js";
 import { degreeDistribution } from "../scripts/engine/probability.js";
-import { buildStory } from "../scripts/story/story.js";
+import { buildStory, storyBeats } from "../scripts/story/story.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { storyTables, text } from "./foundry-i18n.js";
-import { logLine } from "../scripts/story/log-lines.js";
+import { logLine, loreLine } from "../scripts/story/log-lines.js";
+import { bestAndWorst } from "../scripts/engine/aptitudes.js";
 
 /** A roll as the log writes it ("d20 12 +30 = 42 vs DC 15"). */
 const rollText = (c, label = text("FASTFIGHTING.Log.DC")) => text("FASTFIGHTING.Log.Roll", { faces: 20, natural: c.natural, mod: c.mod >= 0 ? `+${c.mod}` : c.mod, total: c.total, label, dc: c.dc });
@@ -126,6 +127,52 @@ describe("a Lore-Collector's payoff", () => {
     expect(boosted(dunce)).toHaveLength(0);
     // No Lore-Collector, no sizing up, no boost.
     expect(boosted(replay(battle([fighter("s", { initiative: { mod: 50 } }), ogre()], { maxRounds: 2 }), pf2eRules, 5))).toHaveLength(0);
+  });
+
+  test("a critical success says, for everyone, what the foe is best at and worst at (none on a plain success)", () => {
+    const brute = () => ogre("ogre", { aptitudes: { smart: 0, strong: 4, fast: 2, wise: 2, charismatic: 1 } });
+    let crits = 0;
+    for ( let seed = 1; seed <= 12; seed++ ) {
+      const spec = battle([fighter("s", { behavior: { study: 1 }, initiative: { mod: 50 }, sizeUp: { mod: 15, dc: 20, label: "Recall Knowledge" } }), brute()], { maxRounds: 1 });
+      const r = replay(spec, pf2eRules, seed);
+      const study = r.log.find(e => e.type === "study" && e.actorId === "s");
+      const lore = r.log.filter(e => e.type === "lore");
+      if ( study.check.degree !== 3 ) {
+        expect(lore).toHaveLength(0);
+        continue;
+      }
+      crits += 1;
+      expect(lore).toHaveLength(1);
+      expect(lore[0]).toMatchObject({ actorId: "s", targetId: "ogre", best: { key: "strong", band: 4 }, worst: { key: "smart", band: 0 } });
+      // (Told for everyone, in a live battle's story in every style, not among the GM's lines; in the planner's story too.)
+      for ( const style of ["roleplay", "standard", "statistician"] ) {
+        const beats = storyBeats(r, spec, style, { tables, seed: 3 });
+        expect(beats.some(b => b.html.includes(text("FASTFIGHTING.Aptitude.strong.4")))).toBe(true);
+        expect(beats.some(b => b.gmHtml.includes(text("FASTFIGHTING.Aptitude.strong.4")))).toBe(false);
+      }
+      expect(buildStory(r, spec, "statistician").text).toContain(text("FASTFIGHTING.Aptitude.strong.4"));
+    }
+    expect(crits).toBeGreaterThan(0);
+    expect(crits).toBeLessThan(12);
+  });
+
+  test("best and worst in words; ties go by the pair, without the fight's dice; one alike in everything, said once", () => {
+    const u = { spec: { aptitudes: { smart: 3, strong: 1, fast: 3, wise: 1, charismatic: 2 } } };
+    const picks = new Set();
+    for ( const salt of ["a|b", "a|c", "b|c", "x|y", "q|r"] ) {
+      const { best, worst } = bestAndWorst(u, salt);
+      expect([best.band, worst.band]).toEqual([3, 1]);
+      expect(["smart", "fast"]).toContain(best.key);
+      expect(["strong", "wise"]).toContain(worst.key);
+      expect(bestAndWorst(u, salt)).toEqual({ best, worst });
+      picks.add(best.key);
+    }
+    expect(picks.size).toBe(2);
+    const e = { actor: "s", target: "ogre", ...bestAndWorst(u, "a|b") };
+    expect(loreLine(e)).toBe(text("FASTFIGHTING.Story.Lore", { actor: "s", target: "ogre", best: text(`FASTFIGHTING.Aptitude.${e.best.key}.3`), worst: text(`FASTFIGHTING.Aptitude.${e.worst.key}.1`) }));
+    const even = bestAndWorst({ spec: { aptitudes: { smart: 2, strong: 2, fast: 2, wise: 2, charismatic: 2 } } }, "a|b");
+    expect(even.best).toEqual(even.worst);
+    expect(loreLine({ actor: "s", target: "ogre", ...even })).toBe(text("FASTFIGHTING.Story.LoreEven", { actor: "s", target: "ogre", trait: text(`FASTFIGHTING.Aptitude.${even.best.key}.2`) }));
   });
 
   test("in a standoff its first turn may go into watching, and its next turn's words land far more often", () => {

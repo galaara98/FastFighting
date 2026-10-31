@@ -33,5 +33,26 @@ export function aptitude(u, key) {
   return APTITUDE_AVERAGE;
 }
 
+/**
+ * What a creature is best and worst at, of its aptitudes, in whole bands (0 to 4): {best: {key, band}, worst: {key,
+ * band}}; the same aptitude for both when it's as good at all of them. Ties go by `salt` (a size-up's: its two
+ * creatures' ids), which starts the aptitudes somewhere else in their order, so the same creature isn't always called
+ * the same thing, and the fight's dice aren't touched.
+ */
+export function bestAndWorst(u, salt = "") {
+  const n = APTITUDES.length;
+  let start = 0;
+  for ( const ch of String(salt) ) start = (start + ch.charCodeAt(0)) % n;
+  const order = APTITUDES.map((_, i) => APTITUDES[(start + i) % n]);
+  const band = key => clamp(Math.round(aptitude(u, key)), 0, APTITUDE_MOST);
+  let best = order[0];
+  let worst = order[0];
+  for ( const key of order ) {
+    if ( band(key) > band(best) ) best = key;
+    if ( band(key) < band(worst) ) worst = key;
+  }
+  return { best: { key: best, band: band(best) }, worst: { key: worst, band: band(worst) } };
+}
+
 /** Smart enough to count as more than dumb (above very low). */
 export const notDumb = u => aptitude(u, "smart") >= APTITUDE_AT.low;

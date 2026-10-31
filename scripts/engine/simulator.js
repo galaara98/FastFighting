@@ -68,6 +68,7 @@ import { readyNow, gearStep, takeGearStep, spareBest, spareTurn, healAhead, tell
 import { mayPatrol, patrolTurn, fidget } from "./behavior/patrol.js";
 import { delayFor, moveInOrder, readyStep, takeReady, readiedAgainst } from "./behavior/waiting.js";
 import { used } from "./gear.js";
+import { bestAndWorst } from "./aptitudes.js";
 
 const MAX_STEPS_PER_TURN = 8;
 /** After the last blow, how long the winners keep tending the dying (ten minutes of rounds, at most). */
@@ -3209,6 +3210,8 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
   log(run, u, {
     type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, kin, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
   });
+  // (Done brilliantly, a critical success: what it learned, said for everyone to hear: what t is best at, and worst.)
+  if ( worked && check?.degree === 3 ) log(run, u, { type: "lore", target: t.spec.name, targetId: t.id, ...bestAndWorst(t, `${u.id}|${t.id}`) });
   if ( worked ) shareLore(run, u, t, sort, turn);
   return true;
 }

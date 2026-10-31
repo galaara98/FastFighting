@@ -1322,6 +1322,13 @@
       "Vantage": "Vantage",
       "RunFirst": "This battle changed since the planner last ran. Run it again, then open the Vantage."
     },
+    "Aptitude": {
+      "smart": { "0": "very dim", "1": "dim", "2": "of average wits", "3": "clever", "4": "brilliant" },
+      "strong": { "0": "very weak", "1": "weak", "2": "of average strength", "3": "strong", "4": "very strong" },
+      "fast": { "0": "very slow", "1": "slow", "2": "of average quickness", "3": "quick", "4": "very quick" },
+      "wise": { "0": "very unwise", "1": "unwise", "2": "of average sense", "3": "wise", "4": "very wise" },
+      "charismatic": { "0": "very uncharming", "1": "uncharming", "2": "of average presence", "3": "charming", "4": "very charming" }
+    },
     "Story": {
       "Title": "The battle at {scene}",
       "Speaker": "The Chronicle",
@@ -1331,6 +1338,8 @@
       "OtherScene": "That creature is on another scene ({scene}).",
       "WhoIs": "{someone} is {name}",
       "WhoIsWhoHint": "Only GMs see this line. The players see the story without it.",
+      "Lore": "{actor} recalls that {target} is {best}, but {worst}.",
+      "LoreEven": "{actor} recalls that {target} is {trait}, and no better or worse at anything else.",
       "StyleLabel": "Story",
       "Style": {
         "roleplay": "Roleplay",
