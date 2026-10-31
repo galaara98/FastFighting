@@ -24,6 +24,7 @@ import { ensureAutoConfig } from "./auto-config.js";
 import { partyWishes, voters, PARTY_TACTICS } from "./party.js";
 import { rankForCommand, autoLieutenants, partyRoles } from "./command-pick.js";
 import { setting, roundsRange, rangeOf } from "../settings.js";
+import { battleSignature } from "./run-memory.js";
 
 const SIDE_LABELS = {
   [SIDES.FRIENDLY]: "FASTFIGHTING.Side.friendly",
@@ -1026,7 +1027,8 @@ const fightRules = adapter => (setting("plannerWorkers") === false ? null : work
 
 /**
  * Full pipeline used by the Battle Planner. The fights run on background workers where they can (fightPool): the hooks
- * and modifiers stay here, before and after. `threads`: how many they ran on.
+ * and modifiers stay here, before and after. `threads`: how many they ran on. `signature`: the battle's as it was built
+ * (run-memory.js), before the hooks and the fights could add to it, as the planner opened again will build it.
  */
 export async function simulate(roster, setup, { onProgress, signal } = {}) {
   const adapter = getAdapter();
@@ -1034,6 +1036,7 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
   if ( game.user.isGM ) await Promise.all(roster.map(e => ensureAutoConfig(e.token?.actor, e.spec)));
 
   const { spec, approach } = battleFor(roster, setup);
+  const signature = battleSignature(spec);
   Hooks.callAll("fastFighting.preSimulate", spec, { setup, roster });
   const seed = setup.options.seed ?? undefined;
   // (Fight after fight until the prediction's time is up: engine/run-budget.js.)
@@ -1045,7 +1048,7 @@ export async function simulate(roster, setup, { onProgress, signal } = {}) {
     pool.close();
   }
   Hooks.callAll("fastFighting.postSimulate", results, { setup, roster, spec });
-  return { spec, results, approach, threads: pool.used };
+  return { spec, results, approach, threads: pool.used, signature };
 }
 
 /** The most combatants the swing factors leave out one at a time (in a bigger battle, the ones likeliest to matter). */

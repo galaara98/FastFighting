@@ -1799,7 +1799,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       // The tokens again, so HP and positions are current (a character read again where it changed: sheet-watch.js).
       this.roster = await gatherRoster(this.setup);
       let lastPaint = 0;
-      const { spec, results, approach, threads } = await simulate(this.roster, this.setup, {
+      const { spec, results, approach, threads, signature } = await simulate(this.roster, this.setup, {
         signal: this.abort.signal,
         onProgress: (p, done = 0) => {
           this.progress = p;
@@ -1832,7 +1832,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       else {
         // (Kept, to show again if the planner opens on this same battle: a run cut short isn't. And this computer's
         // pace, for the next estimate.)
-        rememberRun(this.holderUuid, spec, results);
+        rememberRun(this.holderUuid, signature, results);
         const pace = paceOf(spec.combatants.length, predictionSeconds(this.setup), results.runs, threads);
         if ( pace ) Promise.resolve().then(() => game.settings.set(MODULE_ID, "runPace", pace)).catch(err => console.warn(`${MODULE_ID} | keeping the pace`, err));
       }

@@ -34,12 +34,13 @@ function read(storage) {
 /**
  * Keep a plan's run: its results and the battle's signature.
  * @param {string} holder      the plan's holder (its encounter's or scene's uuid)
- * @param {object} spec        the battle that was simulated
+ * @param {string} signature   the battle's signature as it was built, before anything ran it (battleSignature: the
+ *   system's preSimulate hook may add to it, and preparing it marks whose each action is where two share an id)
  * @param {object} results     the run's results
  */
-export function rememberRun(holder, spec, results, storage = globalThis.localStorage) {
-  if ( !holder || !results ) return;
-  const entry = { holder, sig: battleSignature(spec), results, at: Date.now() };
+export function rememberRun(holder, signature, results, storage = globalThis.localStorage) {
+  if ( !holder || !signature || !results ) return;
+  const entry = { holder, sig: signature, results, at: Date.now() };
   const list = [entry, ...read(storage).filter(e => e.holder !== holder)].slice(0, KEEP_RUNS);
   try {
     storage?.setItem(KEY, JSON.stringify(list));
