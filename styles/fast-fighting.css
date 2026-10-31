@@ -174,8 +174,8 @@
 .ff-swing-pill--friendly { --ff-pill: var(--ff-friendly); }
 .ff-swing-pill--foes { --ff-pill: var(--ff-hostile); }
 .ff-swing-pill--neutrals { --ff-pill: var(--ff-neutral); }
-.ff-swing-pill.is-encounter { border-color: color-mix(in srgb, var(--ff-pill) 45%, transparent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ff-pill) 45%, transparent); }
-.ff-swing-pill.is-all { border-color: var(--ff-pill); box-shadow: 0 0 0 1px var(--ff-pill); }
+.ff-filter.ff-swing-pill.is-encounter { --ff-ring: color-mix(in srgb, var(--ff-pill) 55%, white); border-color: var(--ff-ring); box-shadow: 0 0 0 1px var(--ff-ring); }
+.ff-filter.ff-swing-pill.is-all { --ff-ring: color-mix(in srgb, var(--ff-pill) 70%, black); border-color: var(--ff-ring); box-shadow: 0 0 0 1px var(--ff-ring); }
 .ff-swing-count.is-warn { color: var(--ff-attention); }
 /* A swing test still open, and the main run's estimates before the study. */
 .ff-swing li.is-open .ff-swing-value, .ff-swing li.is-near .ff-swing-value { font-style: italic; opacity: 0.8; }
