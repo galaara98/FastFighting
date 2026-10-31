@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { controllerOf } from "../scripts/foundry/control.js";
+import { controllerOf, handsOver } from "../scripts/foundry/control.js";
 
 describe("the GM in control of FastFighting (controllerOf)", () => {
   const gm = (id, active = true) => ({ id, isGM: true, active });
@@ -24,5 +24,13 @@ describe("the GM in control of FastFighting (controllerOf)", () => {
 
   test("none named and no GM here: none", () => {
     expect(controllerOf({ chosen: null, users: [gm("cy", false)], activeGM: null })).toBe(null);
+  });
+});
+
+describe("the GM in control asked to hand over (handsOver)", () => {
+  test("Refuse keeps control; Allow, or no answer in time, hands it over", () => {
+    expect(handsOver("refuse")).toBe(false);
+    expect(handsOver("allow")).toBe(true);
+    expect(handsOver(null)).toBe(true);
   });
 });

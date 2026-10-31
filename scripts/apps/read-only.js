@@ -52,12 +52,14 @@ export function readOnly(app, { looks = [], fields = "" } = {}) {
   take.addEventListener("click", async event => {
     event.preventDefault();
     take.disabled = true;
+    let taken = false;
     try {
-      await takeControl();
+      taken = await takeControl();
     } catch ( err ) {
       console.error(`${MODULE_ID} | taking control`, err);
-      take.disabled = false;
     }
+    // (Refused: the button again.)
+    if ( !taken ) take.disabled = false;
   });
   bar.append(text, take);
   // (Above the window's content, under its title: the content lays out its own parts.)

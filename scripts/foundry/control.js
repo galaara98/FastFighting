@@ -2,9 +2,10 @@
  * One GM in control of FastFighting at a time (the world's `controller` setting): their browser alone plays the live
  * battles, writes plans, and answers what FastFighting hears (turn changes, chat, sheets). Every other GM's Battle
  * Planner and Battle Vantage are read only, with Take Control.
- *   - Take Control: the GM in control, where they're here, is asked to hand over (handOver: their queue finished, the
- *     battle they hold kept and let go), then the setting names the GM who took it. One who doesn't answer in time,
- *     or isn't here, isn't waited on.
+ *   - Take Control: the GM in control, where they're here, is asked (Allow or Refuse). Allowed, or no answer in ASK_MS,
+ *     they hand over (handOver: their queue finished, the battle they hold kept and let go), then the setting names the
+ *     GM who took it; refused, nothing changes, and the one who asked is told. A browser that doesn't answer at all, or
+ *     a GM in control who isn't here, isn't waited on.
  *   - The GM in control gone for GONE_MS (a reload is back sooner), or not here as another GM comes: the active GM
  *     (Foundry's) names themself, so the one who left is read only when they're back, until they take it back. Meanwhile
  *     no one's in control. A world where no one has been named yet: the active GM, at once.
@@ -17,6 +18,12 @@ export const HAND_CONTROL = `${MODULE_ID}.handControl`;
 
 /** How long Take Control waits on the GM in control to hand over, and how long a hand-over waits on the setting. */
 export const HAND_MS = 10000;
+
+/** How long the GM in control has to answer Take Control before it's handed over all the same. */
+export const ASK_MS = 20000;
+
+/** The GM in control's answer to Take Control (their dialog's), pure: "refuse" refuses; Allow, or none in time, hands over. */
+export const handsOver = answer => answer !== "refuse";
 
 /** How long the GM in control may be gone (a reload) before the active GM takes control. */
 export const GONE_MS = 15000;
@@ -58,29 +65,68 @@ export function controller() {
 /** Is this browser the one in control? Never a player's. */
 export const inControl = () => !!game.user?.isGM && !handing && !!controller()?.isSelf;
 
-/** Is the GM in control here? */
-export const controllerHere = () => !!controller()?.active;
-
 /** Who's in control changed (the setting, a GM come or gone, a hand-over begun): the apps and live battles follow it. */
 const changed = () => Hooks.callAll("fastFighting.control", controller());
 
-/** Take Control (a read-only GM's): the GM in control asked to hand over first, where they're here. */
+/**
+ * Take Control (a read-only GM's): the GM in control asked first, where they're here. True once it's taken; false where
+ * they refused (the GM told).
+ */
 export async function takeControl() {
-  if ( !game.user?.isGM || inControl() ) return;
+  if ( !game.user?.isGM || inControl() ) return false;
   const now = controller();
   if ( now && !now.isSelf && now.active ) {
+    ui.notifications.info(game.i18n.format("FASTFIGHTING.Control.Asking", { name: now.name }));
+    let answer = null;
     try {
-      await now.query(HAND_CONTROL, {}, { timeout: HAND_MS });
+      answer = await now.query(HAND_CONTROL, {}, { timeout: ASK_MS + HAND_MS * 2 });
     } catch ( err ) {
-      // (Gone meanwhile, or too slow: taken all the same.)
+      // (Gone meanwhile, or no answer at all: taken all the same.)
+    }
+    if ( answer?.refused ) {
+      ui.notifications.info(game.i18n.format("FASTFIGHTING.Control.Refused", { name: now.name }));
+      return false;
     }
   }
   await game.settings.set(MODULE_ID, "controller", game.user.id);
+  return true;
 }
 
-/** Asked to hand over (Foundry says who asks: another GM): this browser's battle kept and let go, then it answers. */
+/** The GM in control asked whether `user` takes control: "allow", "refuse", or null (no answer in ASK_MS). */
+async function askHandOver(user) {
+  let dialog = null;
+  const timer = setTimeout(() => dialog?.close(), ASK_MS);
+  try {
+    return await foundry.applications.api.DialogV2.wait({
+      window: { title: game.i18n.localize("FASTFIGHTING.Control.AskTitle") },
+      content: `<p>${foundry.utils.escapeHTML(game.i18n.format("FASTFIGHTING.Control.Ask", { name: user.name, seconds: Math.round(ASK_MS / 1000) }))}</p>`,
+      buttons: [
+        { action: "allow", label: game.i18n.localize("FASTFIGHTING.Control.Allow"), default: true },
+        { action: "refuse", label: game.i18n.localize("FASTFIGHTING.Control.Refuse") }
+      ],
+      rejectClose: false,
+      render: (event, d) => { dialog = d; }
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Asked to hand over (Foundry says who asks: another GM): the GM here asked; refused, {refused: true}; else this
+ * browser's battle kept and let go, then it answers true.
+ */
 async function handOver(data, { user } = {}) {
   if ( !user?.isGM || user.isSelf || !inControl() ) return false;
+  let answer = null;
+  try {
+    answer = await askHandOver(user);
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | asking about control`, err);
+  }
+  // (Taken some other way meanwhile: nothing to hand over.)
+  if ( !inControl() ) return true;
+  if ( !handsOver(answer) ) return { refused: true };
   try {
     await release(() => {
       handing = true;

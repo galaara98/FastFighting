@@ -2888,6 +2888,12 @@
     "Control": {
       "ReadOnly": "{name} is in control of FastFighting. You can look here, not change anything.",
       "Take": "Take Control",
+      "Asking": "Asking {name} for control of FastFighting.",
+      "AskTitle": "Take control of FastFighting?",
+      "Ask": "{name} asks to take control of FastFighting. With no answer in {seconds} seconds, it passes to them.",
+      "Allow": "Allow",
+      "Refuse": "Refuse",
+      "Refused": "{name} kept control of FastFighting.",
       "Claimed": "{name} left, so you're in control of FastFighting now.",
       "TakenBy": "{name} took control of FastFighting."
     },
