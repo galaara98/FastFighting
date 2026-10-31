@@ -849,7 +849,7 @@
       "NoLeadership": "Without leadership",
       "NoMorale": "Without morale",
       "NoPositioning": "Without terrain & positioning",
-      "Hint": "Click a pill to cycle who's tested: those in the encounter, everyone on the map, or none. Each row is the change without that creature, or with that rule off. A red bar at −35% means the Friendlies win 35 points less often. A broken heart at −2.8% means a Friendly goes down 2.8 points less often; a skull is the same for a PC dying. Negligible: under {threshold} points. ≈: too close to call.",
+      "Hint": "Click a pill to change who's tested. Each number is the change without that creature or rule: the bar, Friendlies winning; the broken heart, one going down; the skull, a PC dying.",
       "Compute": "Compute swing factors",
       "Scope": {
         "friendly": "Friendlies",
