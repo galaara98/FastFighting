@@ -32,7 +32,7 @@ import { sceneDistance } from "../foundry/terrain.js";
 import { planMakeItSo, makingItSo } from "../foundry/make-it-so.js";
 import { ensureAutoConfig, recalcPlaystyles } from "../foundry/auto-config.js";
 import { PlayerSurvey } from "./player-survey.js";
-import { rememberRun, recallRun } from "../foundry/run-memory.js";
+import { rememberRun, recallRun, rememberSwing } from "../foundry/run-memory.js";
 import { startLiveBattle, liveBattle, systemAppliesText } from "../foundry/live-battle.js";
 import { savePlanRun } from "../foundry/live-journals.js";
 import { BattleVantage } from "./battle-vantage.js";
@@ -363,6 +363,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.results = null;
     this.spec = null;
     this.swing = null;
+    this.runSignature = null;
     this.sample = null;
     this.stale = false;
     this.restoredAt = null;
@@ -398,6 +399,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !saved ) return;
       this.spec = spec;
       this.results = saved.results;
+      this.runSignature = saved.sig;
+      // (Its swing factors too, once they were worked out for it.)
+      this.swing = Array.isArray(saved.swing) ? saved.swing : null;
       if ( approach ) this.approach = approach;
       this.sample = typicalFight(spec, saved.results);
         this.restoredAt = saved.at;
@@ -1896,6 +1900,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     this.progress = 0;
     this.counted = 0;
     this.swing = null;
+    // (Not remembered until it's run to the end: swing factors worked out for a run stopped part way aren't kept.)
+    this.runSignature = null;
     // (The last run's results, for the change since: none from a plan of another battle.)
     if ( this.results ) this.previousResults = this.results;
     this.sample = null;
@@ -1939,6 +1945,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         // (Kept, to show again if the planner opens on this same battle: a run cut short isn't. And this computer's
         // pace, for the next estimate.)
         rememberRun(this.holderUuid, signature, results);
+        this.runSignature = signature;
         const pace = paceOf(spec.combatants.length, predictionSeconds(this.setup), results.runs, threads);
         if ( pace ) Promise.resolve().then(() => game.settings.set(MODULE_ID, "runPace", pace)).catch(err => console.warn(`${MODULE_ID} | keeping the pace`, err));
       }
@@ -2005,6 +2012,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     await this.render();
     let lastPaint = 0;
     let lastRows = 0;
+    const signature = this.runSignature;
     try {
       this.swing = await swingFactors(this.spec, this.results, {
         seconds: predictionSeconds(this.setup),
@@ -2032,6 +2040,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
           if ( count ) count.textContent = swingCount(this.swingCount);
         }
       });
+      // (Worked out to the end: kept with the run they're for, to show again when the planner opens on it.)
+      rememberSwing(this.holderUuid, signature, this.swing);
     } catch ( err ) {
       reportError(err);
     } finally {

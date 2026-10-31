@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { battleSignature, rememberRun, recallRun, KEEP_RUNS } from "../scripts/foundry/run-memory.js";
+import { battleSignature, rememberRun, recallRun, rememberSwing, KEEP_RUNS } from "../scripts/foundry/run-memory.js";
 import { rosterOrder } from "../scripts/foundry/battle.js";
 import { prepareBattle } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
@@ -65,5 +65,24 @@ describe("the planner's last runs", () => {
     const broken = { getItem: () => "{not json", setItem: () => { throw new Error("full"); } };
     expect(recallRun("Combat.6", battle(), broken)).toBeNull();
     expect(() => rememberRun("Combat.6", battleSignature(battle()), { runs: 1 }, broken)).not.toThrow();
+  });
+});
+
+describe("swing factors kept with the run they're for", () => {
+  test("shown again with it; a new run, or a changed battle, has none; an older run's never land on a newer", () => {
+    const s = storage();
+    const sig = battleSignature(battle());
+    rememberRun("Combat.x", sig, { runs: 80 }, s);
+    rememberSwing("Combat.x", sig, [{ label: "Without Lem", delta: -0.5 }], s);
+    expect(recallRun("Combat.x", battle(), s).swing).toEqual([{ label: "Without Lem", delta: -0.5 }]);
+    expect(recallRun("Combat.x", battle(15), s)).toBeNull();
+    // (A study finishing for a run that's since been replaced: not kept.)
+    rememberRun("Combat.x", battleSignature(battle(15)), { runs: 90 }, s);
+    rememberSwing("Combat.x", sig, [{ label: "stale" }], s);
+    expect(recallRun("Combat.x", battle(15), s).swing).toBeUndefined();
+    // (The same battle run again: its swing factors gone until worked out again.)
+    rememberSwing("Combat.x", battleSignature(battle(15)), [{ label: "fresh" }], s);
+    rememberRun("Combat.x", battleSignature(battle(15)), { runs: 95 }, s);
+    expect(recallRun("Combat.x", battle(15), s).swing).toBeUndefined();
   });
 });
