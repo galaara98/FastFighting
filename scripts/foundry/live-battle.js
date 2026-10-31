@@ -53,7 +53,7 @@ import { diffAll, sideAfter, leaveToTable } from "../engine/changes.js";
 import { undoRecord } from "./sheet-tools.js";
 import { keepUpdate, keptBattle } from "./live-keeping.js";
 import { notedBy } from "./applied-cards.js";
-import { BACK_AFTER_MS, awayTimers, stillAway, dueTimers, handBack, deadlineClocks, joinWaits } from "./away.js";
+import { BACK_AFTER_MS, START_AWAY_MS, awayTimers, stillAway, dueTimers, handBack, deadlineClocks, joinWaits } from "./away.js";
 import { transcriptOf, newTranscript, dropTranscripts, tidyOnLogin } from "./live-journals.js";
 import { randomSeed } from "../engine/rng.js";
 import { holderOf } from "../engine/behavior/troubles.js";
@@ -4533,12 +4533,12 @@ async function timeUp() {
 }
 
 /**
- * The encounter begins: each character the players run with none of its players connected gets its countdown from
- * now, as if they had left as it began (the setting on).
+ * The encounter begins: each character the players run with none of its players connected gets a short countdown from
+ * now (away.js START_AWAY_MS: the setting's longer one is for a player who leaves), the setting on.
  */
 function timersAtStart(from) {
   if ( !playersRunHere() ) return;
-  setTimers(awayTimers({ units: ownedUnits({ standing: true }), connected: connectedPlayers(), players: new Set(battle.data.players ?? []), from, ms: awayMs(), on: !!setting("autoPlayAbsent") }));
+  setTimers(awayTimers({ units: ownedUnits({ standing: true }), connected: connectedPlayers(), players: new Set(battle.data.players ?? []), from, ms: START_AWAY_MS, on: !!setting("autoPlayAbsent") }));
 }
 
 /** The autoPlayAbsent setting turned off: the countdowns stop. */

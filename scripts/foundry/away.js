@@ -2,8 +2,8 @@
  * Players who leave a live battle and come back (live-battle.js runs it, in the browser that plays the battle), as
  * plain data. Pure: no Foundry globals.
  *   - A player leaves (the autoPlayAbsent setting on): each character they own that the players run and that has no
- *     other of its players connected gets a countdown (autoPlayAbsentSeconds). A player not connected as the battle
- *     begins counts as gone since then.
+ *     other of its players connected gets a countdown (autoPlayAbsentSeconds). One with none of its players connected
+ *     as the encounter begins gets START_AWAY_MS: no one left, so no one to wait long for.
  *   - A countdown runs out: a character still without any of its players connected is FastFighting's to play.
  *   - A player comes back: their characters' countdowns stop at once; once they've stayed BACK_AFTER_MS, every
  *     character they own that FastFighting plays is theirs again, whoever had FastFighting play it.
@@ -11,6 +11,9 @@
  * `connected` is the players connected now, `players` the ids the players run now (Sets); `timers` is the countdowns
  * as `{id: deadline}` (ms).
  */
+
+/** The countdown of a character none of whose players is connected as the encounter begins: time to join, not to come back. */
+export const START_AWAY_MS = 10000;
 
 /** How long a player who joins must stay before their characters are handed back (a connection that drops and comes back at once hands nothing back). */
 export const BACK_AFTER_MS = 12000;

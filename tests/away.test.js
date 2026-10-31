@@ -5,7 +5,7 @@
  * countdowns. A player not connected as the battle begins counts as gone since then.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { BACK_AFTER_MS, awayTimers, stillAway, dueTimers, handBack, clockText, deadlineClocks, joinWaits } from "../scripts/foundry/away.js";
+import { BACK_AFTER_MS, START_AWAY_MS, awayTimers, stillAway, dueTimers, handBack, clockText, deadlineClocks, joinWaits } from "../scripts/foundry/away.js";
 
 const NOW = Date.UTC(2026, 9, 19, 20);
 const MS = 120 * 1000;
@@ -176,4 +176,13 @@ test("the time left, as a clock", () => {
   expect(clockText(4001)).toBe("0:05");
   expect(clockText(0)).toBe("0:00");
   expect(clockText(-5)).toBe("0:00");
+});
+
+describe("characters with no player here as the encounter begins", () => {
+  test("their countdown is the short START_AWAY_MS, the long one being for a player who leaves", () => {
+    const units = [{ id: "kyra", owners: ["ann"] }, { id: "lem", owners: ["bo"] }];
+    const timers = awayTimers({ units, connected: new Set(["bo"]), players: new Set(["kyra", "lem"]), from: 1000, ms: START_AWAY_MS });
+    expect(timers).toEqual({ kyra: 1000 + START_AWAY_MS });
+    expect(START_AWAY_MS).toBe(10000);
+  });
 });
