@@ -19,7 +19,7 @@ import {
   requestSurveys, requestCharacterSurvey, requestGmSurvey, SURVEY_STATUS, playstyleSignature, tacticsFor, reactionsSignature, preparePlayers
 } from "../foundry/tactics.js";
 import { cachedCharacterSpec, showsReactions } from "../foundry/sheet-watch.js";
-import { showSheet, panToToken } from "../foundry/sheet-tools.js";
+import { showSheet, panToToken, tokenHudAt } from "../foundry/sheet-tools.js";
 import {
   gatherRoster, chosenSide, groupOf, proposeNeutralGroups, resolveAllegiances, simulate, swingFactors, swingTests, SWING_SCOPES, typicalFight, fightThreads,
   approachFor, commandChains, commandGroup, seedCommand, repickCommand, clearRole, ROLES, sideName, hostileGroupsIn, secretTeam, SECRET_TEAMS, LEANS, predictionSeconds,
@@ -225,6 +225,13 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !id ) return;
       event.preventDefault();
       showSheet(canvas.tokens.get(id)?.actor);
+    });
+    // (Right-clicked: the token's HUD, Foundry's own right-click menu, over the portrait.)
+    this.element.addEventListener("contextmenu", event => {
+      const id = event.target.closest?.(".ff-detail-portrait")?.closest("[data-token-id]")?.dataset.tokenId;
+      if ( !id ) return;
+      event.preventDefault();
+      tokenHudAt(canvas.tokens.get(id), { x: event.clientX, y: event.clientY });
     });
     // (Told when a character's reactions may have changed: sheet-watch.js. Only the creature in Details shows them.)
     this.unwatchReactions = showsReactions({

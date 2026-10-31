@@ -32,7 +32,7 @@ import { wheelSideways } from "./sideways.js";
 import { blink, keepTyping } from "./blink.js";
 import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
-import { showSheet, panToToken } from "../foundry/sheet-tools.js";
+import { showSheet, panToToken, tokenHudAt } from "../foundry/sheet-tools.js";
 import {
   liveBattle, playedElsewhere, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
@@ -377,6 +377,16 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
       if ( !tokenId ) return;
       event.preventDefault();
       showSheet(b.scene.tokens.get(tokenId)?.actor);
+    });
+    // (The picture in Details right-clicked: the token's HUD, Foundry's own right-click menu, over it.)
+    el.addEventListener("contextmenu", event => {
+      const face = event.target.closest?.(".ff-battle-face");
+      if ( !face ) return;
+      const id = face.closest("[data-node]")?.dataset.node ?? face.closest("[data-creature]")?.dataset.creature ?? null;
+      const tokenId = tokenOf(BattleVantage.shown(), id);
+      if ( !tokenId ) return;
+      event.preventDefault();
+      tokenHudAt(canvas.tokens?.get(tokenId), { x: event.clientX, y: event.clientY });
     });
     el.addEventListener("pointerenter", () => { this.#hovering = true; });
     el.addEventListener("pointerleave", () => { this.#hovering = false; });

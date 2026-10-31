@@ -195,3 +195,28 @@ export function panToToken(token) {
   token.control({ releaseOthers: true });
   canvas.animatePan({ x: token.center.x, y: token.center.y, duration: 250 });
 }
+
+/**
+ * A token's HUD (Foundry's right-click menu) brought up at a point on the screen, above any window there: the map
+ * panned (and zoomed in, if need be) so the token sits under the point, the HUD's layer lifted over the windows while it's open, and closed by
+ * any click outside it (Foundry closes it only for clicks on the map).
+ */
+export async function tokenHudAt(token, { x, y }) {
+  if ( !token || token.scene !== canvas.scene ) return;
+  // (The HUD is as big as the map's zoom makes it: zoomed in to 100% at least, the size it's made for.)
+  const scale = Math.max(canvas.stage.scale.x, Math.min(CONFIG.Canvas.maxZoom ?? 3, 1));
+  const [width, height] = canvas.screenDimensions;
+  canvas.pan({ x: token.center.x + (width / 2 - x) / scale, y: token.center.y + (height / 2 - y) / scale, scale });
+  token.control({ releaseOthers: true });
+  const layer = document.getElementById("hud");
+  const outside = event => {
+    if ( !event.target.closest?.("#hud") ) canvas.hud.token.close();
+  };
+  Hooks.once("closeTokenHUD", () => {
+    if ( layer ) layer.style.zIndex = "";
+    document.removeEventListener("pointerdown", outside, true);
+  });
+  if ( layer ) layer.style.zIndex = String((foundry.applications.api.ApplicationV2._maxZ ?? 100) + 1);
+  document.addEventListener("pointerdown", outside, true);
+  await canvas.hud.token.bind(token);
+}
