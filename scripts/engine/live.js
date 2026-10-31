@@ -25,7 +25,7 @@
 import { STATUS, SWAY, NEUTRAL_PARTY, HOSTILE_GROUPS, GROUPS, clamp } from "../constants.js";
 import {
   prepareBattle, beginRun, beginRound, playTurn, afterTurn, endRun, startTurn, noteCommand, log, notice, settleSides, tickEffects,
-  breakOnHarm, noteHarm, noteFall, noteHeal, noteHp, captureUnit, strikeOutOfTurn, settleAftermath, rethink, answerMove
+  breakOnHarm, noteHarm, noteFall, noteHeal, noteHp, captureUnit, strikeOutOfTurn, settleAftermath, rethink, answerMove, learnLore
 } from "./simulator.js";
 import { createRun, createUnit, isStanding, areEnemies, edgeDistance, groupKeyOf, leadershipOf, SLOTS, headsUp } from "./battle-state.js";
 import { threats } from "./behavior/reactions.js";
@@ -361,6 +361,11 @@ export function observe(run, u, e, harmers = new Map()) {
     case "heal":
       if ( !t ) return;
       noteHeal(run, u, t, Math.max(0, Number(e.amount) || 0), !!e.revived, { action: e.action ?? "", potion: !!e.potion, check: e.check ?? null });
+      return;
+    // (Sizing a foe up at the table, PF2e's Recall Knowledge: a critical success the GM let the table hear (`share`),
+    // what it learned, for everyone. A player's own rolls get no boost from it: they're the player's.)
+    case "study":
+      if ( t && e.share && e.degree === 3 ) learnLore(run, u, t);
       return;
     case "talk": {
       if ( !t || !["persuade", "intimidate", "deceive"].includes(e.kind) ) return;

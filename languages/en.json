@@ -2667,6 +2667,8 @@
       }
     },
     "Live": {
+      "LoreTitle": "Attribute hints",
+      "LoreAsk": "{actor} critically succeeded at recalling knowledge about {target}. Tell everyone what {target} is best and worst at?",
       "SystemApplies": "{name} applies players' damage itself, so this does nothing while that's on.",
       "DamageWaits": "{name}'s damage waits in the Battle Vantage for a GM to apply.",
       "HealingWaits": "{name}'s healing waits in the Battle Vantage for a GM to apply.",

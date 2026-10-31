@@ -16,7 +16,8 @@ const rollText = (c, label = text("FASTFIGHTING.Log.DC")) => text("FASTFIGHTING.
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { genericRules } from "../scripts/adapters/generic/rules.js";
 import { parseFormula } from "../scripts/engine/dice.js";
-import { creature, strike, battle, social } from "./helpers.js";
+import { creature, strike, battle, social, pcTurn } from "./helpers.js";
+import { beginLive } from "../scripts/engine/live.js";
 
 const english = storyTables();
 const tables = { get: k => english[k] };
@@ -195,6 +196,22 @@ describe("a Lore-Collector's payoff", () => {
     const d = dull.byId.get("d");
     d.lore = new Map([["ogre", { best: "strong", worst: "wise" }]]);
     expect(aimedAtLore(dull, d, d.prep.offense[0], dull.byId.get("ogre"))).toBe(1);
+  });
+
+  test("a player's critical size-up at the table: told for everyone only when the GM lets it be; a plain one, nothing", () => {
+    const spec = () => battle([fighter("hero"), ogre("ogre", { aptitudes: { smart: 0, strong: 4, fast: 2, wise: 2, charismatic: 1 } })], { maxRounds: 3 });
+    const read = extra => ({ type: "study", targetId: "ogre", action: "Recall Knowledge", degree: 3, natural: 18, total: 35, dc: 20, sure: true, ...extra });
+    const told = (extra = {}) => {
+      const run = beginLive(spec(), pf2eRules, { seed: 2, players: ["hero"] });
+      const { events } = pcTurn(run, "hero", [read(extra)]);
+      return { run, lore: events.filter(e => e.type === "lore") };
+    };
+    const shared = told({ share: true });
+    expect(shared.lore).toHaveLength(1);
+    expect(shared.lore[0]).toMatchObject({ actorId: "hero", targetId: "ogre", best: { key: "strong" }, worst: { key: "smart" } });
+    expect(shared.run.byId.get("hero").lore.get("ogre")).toEqual({ best: "strong", worst: "smart" });
+    expect(told().lore).toHaveLength(0);
+    expect(told({ share: true, degree: 2 }).lore).toHaveLength(0);
   });
 
   test("in a standoff its first turn may go into watching, and its next turn's words land far more often", () => {

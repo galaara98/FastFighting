@@ -3038,6 +3038,8 @@ async function readPlayerTurn(pc, turn, handMade) {
   events = reconcile(run, pc.id, events.filter(e => e.type !== "handoff"), states);
   // (Something it couldn't be sure of: the GM looks first. The battle waits.)
   if ( events.some(e => e.sure === false) ) events = await review(pc, events);
+  // (A critical size-up at a creature that isn't a player's: what it learned told to everyone, if the GM says so.)
+  for ( const e of events ) if ( e.type === "study" && e.degree === 3 ) e.share = await shareLore(run, pc.id, e);
   events.push(...handoffs);
   syncPools(adapter);
   const result = pcTurnEnd(run, pc.id, events, states, pc.facts ?? []);
@@ -3052,6 +3054,20 @@ async function readPlayerTurn(pc, turn, handMade) {
   turn.messages.push(...await showRolls(endRolls, turn, { audiences }));
   turn.messages.push(...await tellNew());
   return result.ended;
+}
+
+/**
+ * A player's critical size-up (PF2e Recall Knowledge) at a creature that isn't a player's: should the table hear what it
+ * learned (engine/live.js observe: the target's best and worst aptitudes, in words)? The GM says. At a player's own
+ * character, no: the players have their sheets.
+ */
+async function shareLore(run, pcId, e) {
+  const t = run.byId.get(e.targetId);
+  if ( !t || t.spec.kind === "pc" ) return false;
+  return !!(await foundry.applications.api.DialogV2.confirm({
+    window: { title: loc("FASTFIGHTING.Live.LoreTitle") },
+    content: `<p>${escape(fmt("FASTFIGHTING.Live.LoreAsk", { actor: run.byId.get(pcId)?.spec.name ?? "", target: t.spec.name }))}</p>`
+  }));
 }
 
 /**
