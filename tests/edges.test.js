@@ -8,7 +8,8 @@ import { buildStory, storyBeats } from "../scripts/story/story.js";
 import { combinePlaystyles } from "../scripts/engine/playstyles.js";
 import { storyTables, text } from "./foundry-i18n.js";
 import { logLine, loreLine } from "../scripts/story/log-lines.js";
-import { bestAndWorst } from "../scripts/engine/aptitudes.js";
+import { bestAndWorst, aptitudeTested } from "../scripts/engine/aptitudes.js";
+import { aimedAtLore, LORE_AIM, bestOptionVs } from "../scripts/engine/behavior/targeting.js";
 
 /** A roll as the log writes it ("d20 12 +30 = 42 vs DC 15"). */
 const rollText = (c, label = text("FASTFIGHTING.Log.DC")) => text("FASTFIGHTING.Log.Roll", { faces: 20, natural: c.natural, mod: c.mod >= 0 ? `+${c.mod}` : c.mod, total: c.total, label, dc: c.dc });
@@ -173,6 +174,27 @@ describe("a Lore-Collector's payoff", () => {
     const even = bestAndWorst({ spec: { aptitudes: { smart: 2, strong: 2, fast: 2, wise: 2, charismatic: 2 } } }, "a|b");
     expect(even.best).toEqual(even.worst);
     expect(loreLine({ actor: "s", target: "ogre", ...even })).toBe(text("FASTFIGHTING.Story.LoreEven", { actor: "s", target: "ogre", trait: text(`FASTFIGHTING.Aptitude.${even.best.key}.2`) }));
+  });
+
+  test("what it learned, a tactical mind aims at: what tests the foe's worst, rather; its best, less; nothing known, as before", () => {
+    expect(["reflex", "dex", "fortitude", "con", "will", "perception", "int", "cha", "ac"].map(aptitudeTested))
+      .toEqual(["fast", "fast", "strong", "strong", "wise", "wise", "smart", "charismatic", null]);
+    const blast = type => ({ id: `blast-${type}`, name: type, kind: "save", cost: 2, save: { type, dc: 30, basic: true }, damage: [parseFormula("6d6", "fire")], range: { increment: 60, max: 60 } });
+    const caster = fighter("s", { traits: minded(80), actions: [blast("reflex"), blast("will"), blast("fortitude")] });
+    const run = createRun(prepareBattle(battle([caster, ogre("ogre", { defenses: { ac: 20, fortitude: 8, reflex: 8, will: 8 } })]), pf2eRules));
+    const [s, o] = ["s", "ogre"].map(id => run.byId.get(id));
+    const [reflex, will, fort] = s.prep.offense;
+    expect([reflex, will, fort].map(a => aimedAtLore(run, s, a, o))).toEqual([1, 1, 1]);
+    s.lore = new Map([["ogre", { best: "strong", worst: "wise" }]]);
+    expect([reflex, will, fort].map(a => aimedAtLore(run, s, a, o))).toEqual([1, LORE_AIM.worst, LORE_AIM.best]);
+    expect(aimedAtLore(run, s, { ...will, save: { ...will.save, type: ["will", "reflex"] } }, o)).toBe(1);
+    // (Its pick, among saves alike: the Will one now.)
+    expect(bestOptionVs(run, s, o).action.id).toBe("blast-will");
+    // A mind that doesn't plan makes nothing of it.
+    const dull = createRun(prepareBattle(battle([fighter("d", { traits: minded(10), actions: [blast("will")] }), ogre()]), pf2eRules));
+    const d = dull.byId.get("d");
+    d.lore = new Map([["ogre", { best: "strong", worst: "wise" }]]);
+    expect(aimedAtLore(dull, d, d.prep.offense[0], dull.byId.get("ogre"))).toBe(1);
   });
 
   test("in a standoff its first turn may go into watching, and its next turn's words land far more often", () => {

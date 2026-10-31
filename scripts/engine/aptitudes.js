@@ -54,5 +54,19 @@ export function bestAndWorst(u, salt = "") {
   return { best: { key: best, band: band(best) }, worst: { key: worst, band: band(worst) } };
 }
 
+/**
+ * The aptitude a defense or a save tests, by the names systems give them (PF2e's Reflex, 5e's dex, DCC's ref, a
+ * Perception DC ...), or null (an AC: none).
+ */
+const TESTED = Object.freeze({
+  __proto__: null,
+  reflex: "fast", ref: "fast", dex: "fast", dexterity: "fast", agility: "fast",
+  fortitude: "strong", fort: "strong", str: "strong", strength: "strong", con: "strong", constitution: "strong",
+  will: "wise", wis: "wise", wisdom: "wise", perception: "wise",
+  int: "smart", intelligence: "smart", wits: "smart",
+  cha: "charismatic", charisma: "charismatic", presence: "charismatic"
+});
+export const aptitudeTested = defense => TESTED[String(defense ?? "").toLowerCase()] ?? null;
+
 /** Smart enough to count as more than dumb (above very low). */
 export const notDumb = u => aptitude(u, "smart") >= APTITUDE_AT.low;

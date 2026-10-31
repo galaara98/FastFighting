@@ -3211,7 +3211,12 @@ function sizesUp(run, u, t, turn, room, { decided = false, wholeTurn = false } =
     type: "study", target: t.spec.name, targetId: t.id, worked, check, factor, oneRoll: !!uses, anyFoe: !!how?.anyFoe, kin, price: !worked && how?.missOutcome ? how.missOutcome.label ?? "" : null
   });
   // (Done brilliantly, a critical success: what it learned, said for everyone to hear: what t is best at, and worst.)
-  if ( worked && check?.degree === 3 ) log(run, u, { type: "lore", target: t.spec.name, targetId: t.id, ...bestAndWorst(t, `${u.id}|${t.id}`) });
+  if ( worked && check?.degree === 3 ) {
+    const found = bestAndWorst(t, `${u.id}|${t.id}`);
+    // (Known from then on: a tactical mind aims at the worst of it, targeting.js aimedAtLore.)
+    (u.lore ??= new Map()).set(t.id, { best: found.best.key, worst: found.worst.key });
+    log(run, u, { type: "lore", target: t.spec.name, targetId: t.id, ...found });
+  }
   if ( worked ) shareLore(run, u, t, sort, turn);
   return true;
 }

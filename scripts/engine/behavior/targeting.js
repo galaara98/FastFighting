@@ -25,6 +25,7 @@ import { perceives, apparentHealth, knowsOf } from "./senses.js";
 import { auraToll } from "./auras.js";
 import { meets, followUpWorth } from "./requires.js";
 import { usefulRounds } from "./effects.js";
+import { aptitudeTested } from "../aptitudes.js";
 
 
 /** Is the unit (or its side) in trouble, so a careful character would spend limited resources? */
@@ -102,6 +103,24 @@ function huntWorth(run, u, action, t) {
   return Math.max(0, hunted - without) * Math.max(0, usefulRounds(run, u.side, 4) - 1);
 }
 
+/** What a tactical mind makes of an action that tests what it knows t is worst at, or best at (aimedAtLore). */
+export const LORE_AIM = Object.freeze({ worst: 1.3, best: 0.85 });
+
+/**
+ * How much more (or less) a tactical mind (Tactical and up) would rather an action at t for what it knows of t (u.lore:
+ * a critical size-up, simulator.js sizesUp): one whose save or check tests t's worst aptitude (aptitudes.js
+ * aptitudeTested: Reflex, fast; Fortitude, strong; Will or Perception, wise), LORE_AIM.worst; its best, LORE_AIM.best;
+ * else 1. Nothing known, one as good at everything, or a mind that doesn't plan: 1.
+ */
+export function aimedAtLore(run, u, action, t) {
+  const known = u.lore?.get?.(t.id);
+  if ( !known || known.best === known.worst || liveTier(run, u) < TACTICAL.TACTICAL ) return 1;
+  // (A save of several, the best of them as the foe takes it: none in particular.)
+  const defense = [].concat(action.save?.type ?? action.check?.against ?? []);
+  const tests = defense.length === 1 ? aptitudeTested(defense[0]) : null;
+  return tests === known.worst ? LORE_AIM.worst : tests === known.best ? LORE_AIM.best : 1;
+}
+
 export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
   const rules = run.prep.rules;
   const main = mainPool(rules);
@@ -147,6 +166,8 @@ export function bestOptionVs(run, u, t, attacksMade = 0, turn = null) {
     // A kiter would rather strike from beyond its foe's own reach (a reach weapon), where it can't answer.
     if ( behavior.kite && action.melee && (action.reach ?? 5) > foeReach(t) ) weighted *= 1 + 0.3 * behavior.kite;
     if ( behavior.exploitWeakness && (action.damage ?? []).some(p => t.spec.iwr?.weak?.[p.type] || t.spec.iwr?.exploit?.[p.type]) ) weighted *= 1 + behavior.exploitWeakness;
+    // Aimed at what it knows the foe is worst at (a critical size-up), a tactical mind would rather; at its best, less.
+    weighted *= aimedAtLore(run, u, action, t);
     // A foe down and regenerating: only what stops it (fire, acid) does any good.
     if ( t.held && t.status === STATUS.DOWN ) weighted *= (action.damage ?? []).some(p => regenOf(t)?.stoppedBy?.includes(p.type)) ? 3 : 0.05;
     // Spoilers would rather lock a foe down, harass it or weaken it than simply hit it; an enabler, to give its friends
