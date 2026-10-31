@@ -8,7 +8,7 @@
  */
 import { describe, expect, test } from "vitest";
 import { beginRun, beginRound, takeTurn, prepareBattle } from "../scripts/engine/simulator.js";
-import { movesNeeded, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
+import { movesNeeded, reachesNow, moveToward, edgeDistance, currentAc, saveRoll, COVER_POINTS, reachShape } from "../scripts/engine/battle-state.js";
 import { inTheWay, spotWithin, spotToShoot, ringOf, stepSpots, lineOfSight, sightBlocked, lineBlocked, blockedPoints, coverFrom, crossed, crossesAny, crossedExtra } from "../scripts/engine/behavior/space.js";
 import { spotsWithin } from "../scripts/engine/behavior/prepare.js";
 import { areEnemies } from "../scripts/engine/battle-state.js";
@@ -503,5 +503,27 @@ describe("what's kept from fight to fight: as worked out afresh, and no more of 
     expect(lineBlocked(run, { x: 30, y: 0 }, { x: 0, y: 0 })).toBe(sightBlocked(run, { x: 30, y: 0 }, { x: 0, y: 0 }));
     expect(run.sightCache.store).not.toBe(shut);
     expect(run.sightCache.store.size).toBe(2);
+  });
+});
+
+describe("reaching without moving, asked quickly", () => {
+  // (A buff weighs every friend on the map: one plainly too far, or out of sight for a spell at range, is answered
+  // without the search for where it would go. The answer is movesNeeded's, 0 or not, wherever the friend stands.)
+  const touch = strike({ id: "touch", reach: 5 });
+  const pole = strike({ id: "pole", reach: 10 });
+  test("the same as movesNeeded's, past a wall and in the open, for a shot, a touch and a reach", () => {
+    let checked = 0;
+    for ( let x = -70; x <= 70; x += 10 ) {
+      for ( let y = -30; y <= 30; y += 15 ) {
+        if ( x === 0 && y === 0 ) continue;
+        const run = fight([who("hero", "friendly", 0), who("pal", "friendly", x, y), who("orc", "hostile", 200)], { walls: [wall(20, -10, 20, 40)] });
+        const [h, p] = get(run, "hero", "pal");
+        for ( const action of [bow, touch, pole] ) {
+          expect(reachesNow(run, h, p, action)).toBe(movesNeeded(run, h, p, action) === 0);
+          checked += 1;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(200);
   });
 });

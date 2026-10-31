@@ -32,7 +32,7 @@
  * Pure: no Foundry globals.
  */
 import { STATUS, TACTICAL } from "../../constants.js";
-import { alliesOf, enemiesOf, isStanding, liveTier, movesNeeded, edgeDistance, behaviorOf, checkRoll, refusesToHelp, defenseDc, usedOnce } from "../battle-state.js";
+import { alliesOf, enemiesOf, isStanding, liveTier, reachesNow, edgeDistance, behaviorOf, checkRoll, refusesToHelp, defenseDc, usedOnce } from "../battle-state.js";
 import { degreeDistribution } from "../probability.js";
 import { hasUses, limited, costOf, costUnits, threatOf, unitsPerTurn } from "./evaluate.js";
 import { outcomeWorth, hasFresh, concentrationCost, heldElsewhere, focusOf } from "./effects.js";
@@ -55,7 +55,7 @@ function reaches(run, u, a, action) {
     return d === null || d <= action.aura;
   }
   const how = action.range || action.reach !== undefined ? action : { ...action, reach: 5 };
-  return movesNeeded(run, u, a, how) === 0;
+  return reachesNow(run, u, a, how);
 }
 
 /**

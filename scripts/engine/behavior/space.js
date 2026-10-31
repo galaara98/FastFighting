@@ -49,10 +49,13 @@ const within = (dx, dy, r) => r > 0 && dx * dx + dy * dy < r * r;
 /** Would u, standing at p, share o's space? */
 export const sharesSpace = (u, p, o) => within(p.x - o.pos.x, p.y - o.pos.y, (sizeOf(u) + sizeOf(o)) / 2 - 0.5);
 
-/** Whose space would u's move end in at p (one it may not end in): the first such, or null. */
-export function inTheWay(run, u, p) {
+/**
+ * Whose space would u's move end in at p (one it may not end in): the first such, or null. `units`: those to look at,
+ * everyone by default (nearBy's, for many spots asked about at once).
+ */
+export function inTheWay(run, u, p, units = run.units) {
   const rules = run.prep.rules;
-  for ( const o of run.units ) {
+  for ( const o of units ) {
     if ( o === u || !takesRoom(o) || !sharesSpace(u, p, o) ) continue;
     if ( rules.endIn?.(run, u, o) ) continue;
     return o;
@@ -153,6 +156,22 @@ export function stepSpots(run, u, feet) {
       if ( inTheWay(run, u, p) || (wallsKnown(run) && lineBlocked(run, u.pos, p)) ) continue;
       out.push(p);
     }
+  }
+  return out;
+}
+
+/**
+ * Everyone whose space a spot within `feet` of c could share with u's (inTheWay's `units`): asked of every square in a
+ * search, all the others on a big map are only time spent.
+ */
+function nearBy(run, u, c, feet) {
+  const out = [];
+  for ( const o of run.units ) {
+    if ( o === u || !takesRoom(o) ) continue;
+    const r = feet + (sizeOf(u) + sizeOf(o)) / 2 + 1;
+    const dx = o.pos.x - c.x;
+    const dy = o.pos.y - c.y;
+    if ( dx * dx + dy * dy <= r * r ) out.push(o);
   }
   return out;
 }
@@ -522,6 +541,7 @@ export function spotToShoot(run, u, t, range, most, edgeDistance, crowd = null) 
   // (The ring read as ringOf reads it, without a list made for it: RING out past `out` feet, and corners past its reach.)
   const out = off > 0 ? most + STEP : most;
   const r = reachOf(out);
+  const near = nearBy(run, u, c, out);
   for ( const o of r < 0 ? [] : ringTo(r) ) {
     if ( o.feet > out + 0.5 || (best && o.feet - off > bestCost) ) break;
     if ( Math.abs(o.dx) > r || Math.abs(o.dy) > r ) continue;
@@ -531,7 +551,7 @@ export function spotToShoot(run, u, t, range, most, edgeDistance, crowd = null) 
     if ( p.feet > most + 0.5 || p.feet >= bestCost ) continue;
     const cost = crowd ? p.feet + crowd(p) : p.feet;
     if ( cost >= bestCost ) continue;
-    if ( !(p.feet > 0 && inTheWay(run, u, p)) && lineOfSight(run, u, t, p) ) {
+    if ( !(p.feet > 0 && inTheWay(run, u, p, near)) && lineOfSight(run, u, t, p) ) {
       best = p;
       bestCost = cost;
     }

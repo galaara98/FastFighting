@@ -1339,7 +1339,23 @@ export function movesNeeded(run, a, t, action) {
   return moves;
 }
 
-/** All of an action movesNow reads: its range (as far as it shoots), or its reach and the moves it makes first. */
+/**
+ * Can a make `action` against t from where it stands (movesNeeded 0)? One plainly out of range or reach is answered
+ * without working out how far it would go: on a map with its walls, that is a search for a spot to shoot from, and a
+ * buff weighs every friend on the map (behavior/support.js), most of them rooms away.
+ */
+export function reachesNow(run, a, t, action) {
+  if ( !action.charge && run.prep.options.positioning && holderOf(run, a) !== t ) {
+    const most = action.range ? (action.range.max ?? action.range.increment * 3) : (action.reach ?? 5);
+    if ( separation(run, a, t) > most + 0.5 ) return false;
+    // (A shot on a map with its walls: in range, and in sight from here, as movesToShoot asks first. Where it would
+    // go to see it is no matter here.)
+    if ( action.range && wallsKnown(run) && a.pos && t.pos ) return !cutOff(run, a, t) && lineOfSight(run, a, t);
+  }
+  return movesNeeded(run, a, t, action) === 0;
+}
+
+/** All of an action movesNow reads:its range (as far as it shoots), or its reach and the moves it makes first. */
 export const reachShape = action => (action.range ? `r${action.range.max ?? action.range.increment * 3}` : `m${action.reach ?? 5}|${action.charge ?? 0}`);
 
 function movesNow(run, a, t, action) {
