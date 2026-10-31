@@ -36,7 +36,7 @@ import { sceneEncounter, encounterNumber } from "../foundry/persistence.js";
 import { clockText } from "../foundry/away.js";
 import { showSheet, panToToken, tokenHudAt } from "../foundry/sheet-tools.js";
 import {
-  liveBattle, liveOn, holdBattleOn, playedElsewhere, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
+  liveBattle, liveOn, holdBattleOn, playedElsewhere, watchedBattle, continueBattle, rewind, rewindEncounter, beginEncounter, endEncounter, playCurrent, answerDamage, setApplyDamage, systemAppliesText, waitingReaction, endReaction, sheetNow, liveFact, dropHeldFact, setNpcReactions, setPlayThrough, finishReview,
   waitingDeals, openDealReview, liveReinforce, reinforcementsLeft,
   waitingOnGm, suggestedSpotlight, spotlightNext, settleBattle, setAutomated, liveCondition, liveMind, bringIntoFight, tokenIdOf, fastFight, fastOffered, fastRunning,
   markInUse
@@ -228,10 +228,15 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     return no ? fmt("FASTFIGHTING.Battle.TitleAtEncounter", { scene, n: no.n }) : fmt("FASTFIGHTING.Battle.TitleAt", { scene });
   }
 
-  /** The live battle, if it's on the encounter on screen (each scene, each encounter, its own). */
+  /**
+   * The live battle, if it's on the encounter on screen (each scene, each encounter, its own). Another GM in control:
+   * as its transcript has it, to look at (watchedBattle).
+   */
   static shown() {
+    const here = sceneEncounter(canvas.scene);
     const b = liveBattle();
-    return b && b.combat?.id === sceneEncounter(canvas.scene)?.id ? b : null;
+    if ( b && b.combat?.id === here?.id ) return b;
+    return inControl() ? null : watchedBattle(here);
   }
 
   /**
@@ -341,8 +346,8 @@ export class BattleVantage extends HandlebarsApplicationMixin(ApplicationV2) {
     const { context, graph, focus } = battleContext(b, this.#focus);
     this.#graph = graph;
     this.#focus = focus;
-    // (Another GM's browser plays it: this window changes nothing, and says whose it is.)
-    const other = playedElsewhere(sceneEncounter(canvas.scene));
+    // (Another GM's browser plays it: this window changes nothing, and says whose it is. Read only, its bar says so.)
+    const other = inControl() ? playedElsewhere(sceneEncounter(canvas.scene)) : null;
     context.elsewhere = other ? fmt("FASTFIGHTING.Battle.PlayedElsewhere", { name: other.name }) : null;
     if ( context.none ) return context;
     // (What holds the battle up. One just come brings the Waiting tab to the front.)
@@ -861,7 +866,7 @@ export function battleContext(b, focusId = null) {
   const combatant = b.combat.combatant;
   const current = combatant ? run.units.find(u => tokenIdOf(u) === combatant.tokenId) ?? null : null;
   const name = id => run.byId.get(id)?.spec.name ?? "";
-  const played = !!current && waitingOnGm();
+  const played = !!current && waitingOnGm(b);
   const player = !!current && run.live.players.has(current.id);
   const started = !!b.combat.started;
   const fast = b === liveBattle() && fastRunning();
@@ -1310,6 +1315,10 @@ export function registerBattleVantage() {
     soon = setTimeout(() => BattleVantage.refresh(), 250);
   };
   for ( const hook of ["updateCombat", "updateActor", "updateToken"] ) Hooks.on(hook, later);
+  // (A battle kept again by the GM in control: a read-only window shows it as it is now.)
+  Hooks.on("updateJournalEntry", () => {
+    if ( !inControl() ) later();
+  });
   // (A GM come or gone, or control handed over: whose browser plays the battle may have changed, playedElsewhere.)
   Hooks.on("userConnected", later);
   Hooks.on("fastFighting.control", later);

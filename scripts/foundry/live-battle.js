@@ -249,6 +249,37 @@ function kept(combatId, battleId) {
   return data ? { data, doc } : null;
 }
 
+/** The battle a read-only GM's Battle Vantage shows (watchedBattle): its transcript's id and when it was kept, and it. */
+let watched = null;
+
+/**
+ * The live battle on `combat` as its transcript has it, for a GM not in control (control.js) to look at: read again
+ * each time the GM in control keeps it (after every turn). Not played, nor changed: none of this browser's battle
+ * functions take it. Null where there's no battle on it, or it won't read.
+ */
+export function watchedBattle(combat) {
+  const flag = combat?.getFlag?.(MODULE_ID, "live");
+  if ( !flag?.active || inControl() ) return null;
+  const found = kept(combat.id, flag.id);
+  const data = found?.data;
+  if ( !data?.snapshot ) return null;
+  const at = found.doc.getFlag(MODULE_ID, "keptAt") ?? null;
+  if ( watched?.id === found.doc.id && watched.at === at ) return watched.battle;
+  const rules = getAdapter()?.rules;
+  if ( !rules ) return null;
+  try {
+    const spec = unpackSpec(data.spec);
+    const run = restoreRun(spec, rules, Array.isArray(data.log) ? { ...data.snapshot, log: data.log } : data.snapshot);
+    const scene = game.scenes.get(data.sceneId) ?? combat.scene ?? canvas.scene;
+    const b = { combat, scene, spec, rules, run, pc: null, data, keptSpec: data.spec, transcriptId: found.doc.id, watching: true };
+    watched = { id: found.doc.id, at, battle: b };
+    return b;
+  } catch ( err ) {
+    console.error(`${MODULE_ID} | a kept battle that won't read`, err);
+    return null;
+  }
+}
+
 /** Rewind This Encounter: the battle is undone, and its transcript goes. */
 function forget(combatId, battleId) {
   return inTurn(() => dropTranscripts("rewound", combatId, battleId));
@@ -621,8 +652,8 @@ async function spotlightMoved(combat, prior) {
 /** A turn's dice of its own, drawn as it begins and kept nowhere: nothing a player's client is sent foretells them. */
 const freshNonce = () => (globalThis.crypto?.getRandomValues?.(new Uint32Array(1))[0] || Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0 || 1;
 
-/** A turn's key: its round and combatant (a spotlight system's: which spotlight it is). */
-const turnKey = combatant => `${battle.data.spotlight ? `s${battle.data.spots ?? 0}` : battle.combat.round}.${combatant?.id}`;
+/** A turn's key: its round and combatant (a spotlight system's: which spotlight it is), in `b` (the battle held here). */
+const turnKey = (combatant, b = battle) => `${b.data.spotlight ? `s${b.data.spots ?? 0}` : b.combat.round}.${combatant?.id}`;
 
 /**
  * On to the next turn: the tracker's next; a spotlight system's spotlight handed back for the GM to give (or, with
@@ -855,9 +886,12 @@ async function followBack(prior) {
   return true;
 }
 
-/** Whether the turn the tracker is on has been played, and waits for the GM's Next Turn. */
-export function waitingOnGm() {
-  return !!battle?.combat.combatant && battle.data.played === turnKey(battle.combat.combatant);
+/**
+ * Whether the turn the tracker is on has been played, and waits for the GM's Next Turn: in the battle held here, or `b`
+ * (a read-only Battle Vantage's, watchedBattle).
+ */
+export function waitingOnGm(b = battle) {
+  return !!b?.combat.combatant && b.data.played === turnKey(b.combat.combatant, b);
 }
 
 /** Whom FastFighting would spotlight next, for the Battle Vantage (a spotlight system's), or null. */

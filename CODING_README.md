@@ -36,6 +36,8 @@ FastFighting is split into a pure simulation engine, system **helpers**, and the
   names the taker, whose browser picks it up. A GM in control gone `GONE_MS` (15 s) is replaced by the active GM
   (`claimIfGone`). `fastFighting.control` fires on any change. Other GMs' planner and Battle Vantage are read only
   (`apps/read-only.js`): a bar with Take Control, fields off, and only the actions in `PLANNER_LOOKS` / `VANTAGE_LOOKS`.
+  A read-only Battle Vantage shows `watchedBattle(combat)`: the battle restored from its transcript (cached by its
+  `keptAt`, read again as the GM in control keeps it), never one this browser's battle functions take.
 - **Several battles at once** (Foundry runs any number of encounters, on one scene or several): a GM's browser plays
   one at a time (`live-battle.js battle`) and parks the rest. A parked battle is kept on its transcript, as a reload
   leaves it, its encounter's `live` flag still on (`liveOn(combat)`: there's a battle on it, held or parked). It's
