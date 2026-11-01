@@ -156,7 +156,7 @@
       },
       "remoteNotice": {
         "Name": "Remote fight dampener",
-        "Hint": "How hard it is for creatures outside the encounter to notice a fight they could see, hear or smell. New encounters start from this."
+        "Hint": "Increase the dampener to lower the chance that bystanders (hostile or neutral) will perceive a fight nearby; decrease it to make it more likely."
       },
       "genericFallback": {
         "Name": "Use the experimental generic adapter",
