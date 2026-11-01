@@ -80,9 +80,10 @@ describe("swingTests", () => {
     const rules = (options, scope = {}) => swingTests({ ...spec, options: { ...spec.options, ...options } }, baseline, { friendly: false, foes: false, neutrals: false, ...scope }).tests.filter(t => t.key === "remoteNotice");
     expect(rules({ remoteNotice: 15 }).map(t => t.value)).toEqual([-5, 5, 25, 35]);
     expect(rules({ remoteNotice: 15 })[2].make(spec).options.remoteNotice).toBe(25);
-    // (Kept within -50 to 50, none back at the GM's own.)
-    expect(rules({ remoteNotice: 45 }).map(t => t.value)).toEqual([25, 35, 50]);
-    expect(rules({ remoteNotice: 50 }).map(t => t.value)).toEqual([30, 40]);
+    // (One past -50 or 50 skipped, not stopped at the end.)
+    expect(rules({ remoteNotice: 45 }).map(t => t.value)).toEqual([25, 35]);
+    expect(rules({ remoteNotice: 40 }).map(t => t.value)).toEqual([20, 30, 50]);
+    expect(rules({ remoteNotice: -50 }).map(t => t.value)).toEqual([-40, -30]);
     // (The rules pill off: none; no one outside the encounter: none.)
     expect(rules({ remoteNotice: 0 }, { rules: false })).toEqual([]);
     const inside = { ...spec, combatants: spec.combatants.filter(c => c.inEncounter !== false) };

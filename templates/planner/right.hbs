@@ -122,7 +122,7 @@
       {{#if results.swing}}
       <ul class="ff-swing">
         {{#each results.swing}}
-        <li class="{{cls}}" {{#if hint}}data-tooltip-text="{{hint}}"{{/if}}>
+        <li class="{{cls}}" {{#if hintHtml}}data-tooltip-html="{{hintHtml}}" data-tooltip-class="ff-swing-tooltip" aria-label="{{label}}: {{hint}}"{{else}}{{#if hint}}data-tooltip-text="{{hint}}"{{/if}}{{/if}}>
           <span class="ff-swing-label">{{label}}{{#if downed}} <span class="ff-swing-death {{downed.cls}}"><i class="fa-solid fa-heart-crack" aria-hidden="true"></i> {{downed.value}}</span>{{/if}}{{#if death}} <span class="ff-swing-death {{death.cls}}"><i class="fa-solid fa-skull" aria-hidden="true"></i> {{death.value}}</span>{{/if}}</span>
           {{#if bars}}
           <span class="ff-swing-bar ff-swing-bars">{{#each bars}}<span class="ff-swing-half ff-swing-half--{{key}}"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>{{/each}}</span>

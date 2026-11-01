@@ -1036,27 +1036,29 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const lead = s.lead ?? "win";
     const shown = s[lead] ?? s.win;
     const gain = s.gain ?? s.delta;
-    const harm = lead !== "win";
+    // (A harm, one going down or a death: likelier is worse.)
+    const harmful = key => key === "downed" || key === "death";
+    const harm = harmful(lead);
     const threshold = (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang);
     const unsettled = s.status === "near" || (s.status === "open" && !this.running);
     const range = m => (unsettled ? [m.leanLo, m.leanHi] : [m.lo, m.hi]).map(swingPoints);
-    const line = (key, m) => {
-      const [lo, hi] = range(m);
-      return localize(key, { value: swingPoints(m.estimate), lo, hi });
-    };
     const note = { negligible: "NegligibleNote", near: "NearNote", open: this.running ? "MeasuringNote" : "UnsureNote" }[s.status];
-    const hint = [
-      note ? localize(`FASTFIGHTING.Swing.${note}`, { threshold }) : null,
-      s.battle ? line("FASTFIGHTING.Swing.BattleLine", s.battle) : null,
-      line(s.battle ? "FASTFIGHTING.Swing.MapLine" : "FASTFIGHTING.Swing.WinLine", s.win),
-      s.downed ? line("FASTFIGHTING.Swing.DownedLine", s.downed) : null,
-      s.death ? line("FASTFIGHTING.Swing.DeathLine", s.death) : null,
-      localize("FASTFIGHTING.Swing.Fights", { n: s.runs.toLocaleString(game.i18n.lang) })
-    ].filter(Boolean).join(" ");
+    // (Its tooltip: the note, then a line for each measure, its change and how far it could be, the one it's shown by in
+    // bold; then how many fights. As text too, for a screen reader.)
+    const measures = [s.battle ? ["battle", s.battle] : null, [s.battle ? "map" : "win", s.win], s.downed ? ["downed", s.downed] : null, s.death ? ["death", s.death] : null]
+      .filter(Boolean).map(([key, m]) => {
+        const [lo, hi] = range(m);
+        const good = harmful(key) ? -m.estimate : m.estimate;
+        return { key, label: loc(`FASTFIGHTING.Swing.Measure.${key}`), value: swingPoints(m.estimate), range: localize("FASTFIGHTING.Swing.Range", { lo, hi }), tone: Math.abs(m.estimate) < 0.0005 ? "" : good > 0 ? "pos" : "neg", led: key === lead || (s.battle && lead === "win" && key === "map") };
+      });
+    const noteText = note ? localize(`FASTFIGHTING.Swing.${note}`, { threshold }) : null;
+    const fights = localize("FASTFIGHTING.Swing.Fights", { n: s.runs.toLocaleString(game.i18n.lang) });
+    const hint = [noteText, ...measures.map(m => localize("FASTFIGHTING.Words.Value", { label: m.label, value: `${m.value} (${m.range})` })), fights].filter(Boolean).join(" ");
+    const hintHtml = `<div class="ff-swing-tip">${noteText ? `<p class="ff-swing-tip-note">${escapeHtml(noteText)}</p>` : ""}<table>${measures.map(m => `<tr class="${m.led ? "is-led" : ""}"><th>${escapeHtml(m.label)}</th><td class="ff-swing-tip-value ${m.tone}">${escapeHtml(m.value)}</td><td class="ff-swing-tip-range">${escapeHtml(m.range)}</td></tr>`).join("")}</table><p class="ff-swing-tip-fights">${escapeHtml(fights)}</p></div>`;
     // (Beside its name, where it moves SWING_THRESHOLD or more: red where it's likelier.)
     const badge = m => (m && (m.clear === "matters" || Math.abs(m.estimate) >= SWING_THRESHOLD) ? { value: swingPoints(m.estimate), cls: m.estimate > 0 ? "neg" : "pos" } : null);
     const row = {
-      label: s.label, width: Math.min(50, Math.abs(gain) * 100).toFixed(1), positive: gain >= 0, value: swingPoints(shown.estimate), hint,
+      label: s.label, width: Math.min(50, Math.abs(gain) * 100).toFixed(1), positive: gain >= 0, value: swingPoints(shown.estimate), hint, hintHtml,
       valueIcon: { downed: "fa-heart-crack", death: "fa-skull" }[lead] ?? null,
       downed: lead === "downed" ? null : badge(s.downed), death: lead === "death" ? null : badge(s.death)
     };

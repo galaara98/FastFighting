@@ -178,6 +178,17 @@
 /* The two within 5 points of each other: one bar, in the map's colours. */
 .ff-swing-bar--map span.pos { background: color-mix(in srgb, var(--ff-friendly) 75%, black); }
 .ff-swing-bar--map span.neg { background: color-mix(in srgb, var(--ff-hostile) 75%, black); }
+/* A swing test's tooltip: the note, a line for each measure (the one it's shown by in bold), the fights. */
+.ff-swing-tooltip .ff-swing-tip { display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.ff-swing-tip p { margin: 0; }
+.ff-swing-tip-note { font-style: italic; }
+.ff-swing-tip table { border-collapse: collapse; }
+.ff-swing-tip th { font-weight: 400; text-align: left; padding: 1px 10px 1px 0; white-space: nowrap; }
+.ff-swing-tip td { padding: 1px 0 1px 10px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ff-swing-tip tr.is-led th, .ff-swing-tip tr.is-led .ff-swing-tip-value { font-weight: 700; }
+.ff-swing-tip-value.pos { color: var(--ff-friendly); }
+.ff-swing-tip-value.neg { color: var(--ff-hostile); }
+.ff-swing-tip-range, .ff-swing-tip-fights { opacity: 0.75; }
 .ff-swing-value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .ff-swing-value.pos { color: var(--ff-friendly); }
 .ff-swing-value.neg, .ff-swing-value .neg { color: var(--ff-hostile); }

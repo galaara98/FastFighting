@@ -1918,8 +1918,8 @@ the chance of a PC dying, by 2.5 points or more, with as few fights as it takes 
 - Tests: the battle without each creature from the pills chosen (those that did most in the main run first: damage
   plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with Leadership, Morale,
   and Terrain & positioning each turned off (only those that are on), and, with anyone outside the encounter, the
-  Remote fight dampener at the GM's value −20, −10, +10 and +20 (`SWING_DAMPENER`; kept within −50 to 50, none back at
-  the GM's own). The rules pill turns them all on or off. The dampener's tests never make the Overview's Hinges on tile. Over 35 tests, the count is shown as a warning.
+  Remote fight dampener at the GM's value −20, −10, +10 and +20 (`SWING_DAMPENER`; one that would go past −50 or 50 is
+  skipped). The rules pill turns them all on or off. The dampener's tests never make the Overview's Hinges on tile. Over 35 tests, the count is shown as a warning.
 - Time: 6 × prediction time for 12 tests (four characters, five foes, every rule), × √(tests ÷ 12) otherwise
   (`swingBudgetMs`): 10 seconds give 12 tests 60 seconds, 3 tests 30, 15 tests 67. It ends sooner once every test is
   settled.

@@ -1092,7 +1092,7 @@ const SWING_RULES = [["leadership", "FASTFIGHTING.Swing.NoLeadership"], ["morale
 
 /**
  * The Remote fight dampener's tests (the rules pill, with anyone outside the encounter to notice the fight): the
- * GM's value moved by each of these, kept within -50 to 50 (none that comes back to the GM's own).
+ * GM's value moved by each of these; one that would go past -50 or 50 is skipped.
  */
 const SWING_DAMPENER = Object.freeze([-20, -10, 10, 20]);
 
@@ -1120,7 +1120,7 @@ export function swingTests(spec, baseline, scope = {}) {
   // (The dampener moved either way from the GM's own, where anyone outside the encounter could notice the fight.)
   const damped = clamp(Number(spec.options.remoteNotice) || 0, -50, 50);
   const outsiders = spec.combatants.some(c => c.inEncounter === false && !c.hazard);
-  const dampers = outsiders ? [...new Set(SWING_DAMPENER.map(d => clamp(damped + d, -50, 50)))].filter(v => v !== damped) : [];
+  const dampers = outsiders ? SWING_DAMPENER.map(d => damped + d).filter(v => v >= -50 && v <= 50) : [];
   counts.rules = rules.length + dampers.length;
   const chosen = candidates.filter(c => {
     const state = swingScopeState(scope, swingScopeOf(c));
