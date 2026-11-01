@@ -2,10 +2,17 @@
 <section class="ff-right">
   {{#if hasResults}}
   <div class="ff-summary">
+    {{#if results.winRows}}
+    <div class="ff-winbar ff-winbar--rows" role="img" aria-label="{{summary.label}}">
+      {{#each results.winRows}}<div class="ff-winrow ff-winrow--{{key}}" data-tooltip-text="{{hint}}">{{#each segments}}<span class="is-{{cls}}" style="width: {{width}}%"></span>{{/each}}</div>{{/each}}
+    </div>
+    <div class="ff-legend ff-legend--rows" aria-hidden="true">{{#each results.winRows}}<span class="ff-winrow-legend ff-winrow--{{key}}" data-tooltip-text="{{hint}}"><span class="ff-swatch is-won"></span>{{legend}}</span>{{/each}}</div>
+    {{else}}
     <div class="ff-winbar" role="img" aria-label="{{summary.label}}">
       {{#each results.segments}}<span style="width: {{width}}%; background: {{color}}">{{#if (gt width 12)}}{{label}} {{pct}}{{/if}}</span>{{/each}}
     </div>
     <div class="ff-legend" aria-hidden="true">{{#each results.segments}}<span><span class="ff-swatch" style="background: {{color}}"></span>{{label}} {{pct}}</span>{{/each}}</div>
+    {{/if}}
   </div>
   {{/if}}
   <nav class="ff-tabs" role="tablist" aria-label="{{localize "FASTFIGHTING.Planner.ResultsTabs"}}">
@@ -101,7 +108,6 @@
     {{#if (eq resultTab "swing")}}
     <div class="ff-panel">
       <p class="ff-hint">{{results.swingHint}}</p>
-      {{#if results.swingUndecided}}<p class="ff-hint ff-swing-undecided"><i class="fa-solid fa-hourglass-end" aria-hidden="true"></i> {{results.swingUndecided}}</p>{{/if}}
       <div class="ff-swing-run">
         <div class="ff-filters" role="group" aria-label="{{localize "FASTFIGHTING.Swing.ScopeLabel"}}">
           {{#each results.swingPills}}<button type="button" class="ff-filter ff-swing-pill ff-swing-pill--{{id}} {{ring}} {{#if active}}active{{/if}}" data-action="swingScope" data-scope="{{id}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" data-tooltip-text="{{hint}}" aria-label="{{hint}}" {{#if @root.running}}disabled{{/if}}>{{label}}{{#if count}} <span class="ff-count">{{count}}</span>{{/if}}</button>{{/each}}
@@ -118,8 +124,13 @@
         {{#each results.swing}}
         <li class="{{cls}}" {{#if hint}}data-tooltip-text="{{hint}}"{{/if}}>
           <span class="ff-swing-label">{{label}}{{#if downed}} <span class="ff-swing-death {{downed.cls}}"><i class="fa-solid fa-heart-crack" aria-hidden="true"></i> {{downed.value}}</span>{{/if}}{{#if death}} <span class="ff-swing-death {{death.cls}}"><i class="fa-solid fa-skull" aria-hidden="true"></i> {{death.value}}</span>{{/if}}</span>
-          <span class="ff-swing-bar"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>
+          {{#if bars}}
+          <span class="ff-swing-bar ff-swing-bars">{{#each bars}}<span class="ff-swing-half ff-swing-half--{{key}}"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>{{/each}}</span>
+          <span class="ff-swing-value ff-swing-values">{{#each bars}}<span class="ff-swing-half--{{key}} {{#if positive}}pos{{else}}neg{{/if}}">{{#if valueHtml}}{{{valueHtml}}}{{else}}{{value}}{{/if}}</span>{{/each}}</span>
+          {{else}}
+          <span class="ff-swing-bar {{#if merged}}ff-swing-bar--map{{/if}}"><span class="{{#if positive}}pos{{else}}neg{{/if}}" style="width: {{width}}%"></span></span>
           <span class="ff-swing-value {{#if positive}}pos{{else}}neg{{/if}}">{{#if valueIcon}}<i class="fa-solid {{valueIcon}}" aria-hidden="true"></i> {{/if}}{{#if valueHtml}}{{{valueHtml}}}{{else}}{{value}}{{/if}}</span>
+          {{/if}}
         </li>
         {{/each}}
       </ul>

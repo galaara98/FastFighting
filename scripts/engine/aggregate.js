@@ -2,7 +2,7 @@
  * Accumulates per-run summaries into batch statistics.
  */
 import { STATUS, SIDES, NEUTRAL_PARTY, HOSTILE_GROUPS } from "../constants.js";
-import { createLedger } from "./swing-stats.js";
+import { createLedger, battleWonIn } from "./swing-stats.js";
 
 /**
  * An aggregator's numbers as a batch gives them (`extra` beside them: its seed), with its fights' ledger
@@ -99,11 +99,19 @@ export function createAggregator(prep) {
   const foeEnds = Object.fromEntries(FOE_ENDS.map(k => [k, 0]));
   let foesSeen = 0;
   const bystanderIds = new Set(prep.combatants.filter(c => c.spec.inEncounter === false && !c.spec.hazard).map(c => c.spec.id));
+  // (The battle, not the map: the party's foes who were in the encounter, beaten while a Friendly is still in it.)
+  const encounterFoeIds = prep.combatants.filter(c => foeIds.has(c.spec.id) && c.spec.inEncounter !== false && !c.spec.hazard).map(c => c.spec.id);
+  let battleWonRuns = 0;
+  let battleLostRuns = 0;
   let joinedRuns = 0;
   let reinforcedRuns = 0;
   const foeHeads = HOSTILE_GROUPS.map(key => prep.command?.[key]?.[0]?.id).filter(id => id && units[id]);
   let headFellRuns = 0;
   const ledger = createLedger(prep.combatants);
+  // (The battle won: swing-stats.js battleWonIn. Lost: no Friendly left on its feet.)
+  const friendList = [...friendIds];
+  const friendStands = result => friendList.some(id => result.units[id]?.status === STATUS.STANDING && !result.units[id].swayed);
+  const battleWon = result => battleWonIn(result, friendList, encounterFoeIds);
 
   return {
     /** The fights so far, for the swing study (swing-stats.js createLedger). */
@@ -207,6 +215,9 @@ export function createAggregator(prep) {
       if ( partyWon && pcIds.length && (pcsDead > 0 || pcsDowned * 2 >= pcIds.length) ) party.costlyWins += 1;
       if ( lostGoods ) party.lostGoods += 1;
       if ( joined ) joinedRuns += 1;
+      // (The battle: won; lost, no Friendly left on its feet; else still undecided when it ended.)
+      if ( battleWon(result) ) battleWonRuns += 1;
+      else if ( !friendStands(result) ) battleLostRuns += 1;
       if ( reinforced ) reinforcedRuns += 1;
       if ( foeHeads.some(id => result.units[id] && foeEnd(result.units[id]) !== "standing") ) headFellRuns += 1;
     },
@@ -290,6 +301,12 @@ export function createAggregator(prep) {
         // Someone from outside the encounter joining in; reinforcements arriving; a foe's boss or leader falling (or
         // fleeing, giving up, talked over). Each null where there's none to.
         pBystandersJoin: bystanderIds.size ? joinedRuns / n : null,
+        // The Friendly Team winning the battle: every foe of it in the encounter beaten, with one of it still standing,
+        // whoever joined from the rest of the map (its sides' pWin: the map cleared, all of them); and losing it, none
+        // of it left standing. Null with no Friendly or no foe in the encounter. With no one outside the encounter, won
+        // is the map cleared.
+        pBattleWon: friendIds.size && encounterFoeIds.length ? battleWonRuns / n : null,
+        pBattleLost: friendIds.size && encounterFoeIds.length ? battleLostRuns / n : null,
         pReinforced: prep.reinforcements?.size ? reinforcedRuns / n : null,
         pFoeHeadFalls: foeHeads.length ? headFellRuns / n : null,
         rounds: {

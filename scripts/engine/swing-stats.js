@@ -76,20 +76,23 @@ export const UNDECIDED_MOST = 0.5;
 export const undecidedOf = results => clamp((Number(results?.pStalemate) || 0) + (Number(results?.pNone) || 0), 0, 1);
 
 /**
- * The measure a test is shown by, `lead` ("win", "downed" or "death"), and its change for the Friendly Team, `gain`
- * (better for it positive: one going down, or a character dying, turned round). The wins; but where most of the main
- * run's fights end with no side beaten (UNDECIDED_MOST: leaving out a PC can't lower odds near nothing), the measure
- * that clearly matters most, the wins too, else one of the Friendly Team going down.
+ * The measure a test is shown by, `lead` ("win", "battle", "downed" or "death"), and its change for the Friendly Team,
+ * `gain` (better for it positive: one going down, or a character dying, turned round). The wins; but where most of
+ * the main run's fights end with no side beaten (UNDECIDED_MOST: leaving out a PC can't lower odds near nothing), the
+ * measure that clearly matters most, the wins too, else the battle won, else one of the Friendly Team going down.
  */
 export function leadOf(verdict, undecided) {
-  const measures = { win: verdict.win, downed: verdict.downed, death: verdict.death };
+  const measures = { win: verdict.win, battle: verdict.battle, downed: verdict.downed, death: verdict.death };
   let lead = "win";
   if ( undecided >= UNDECIDED_MOST ) {
     const clear = Object.entries(measures).filter(([, m]) => m?.clear === "matters").sort(([, a], [, b]) => Math.abs(b.estimate) - Math.abs(a.estimate));
-    lead = clear[0]?.[0] ?? (measures.downed ? "downed" : "win");
+    lead = clear[0]?.[0] ?? (measures.battle ? "battle" : measures.downed ? "downed" : "win");
   }
-  return { lead, gain: lead === "win" ? measures.win.estimate : -measures[lead].estimate };
+  return { lead, gain: GOOD.has(lead) ? measures[lead].estimate : -measures[lead].estimate };
 }
+
+/** The measures where likelier is better for the Friendly Team (the rest are harms). */
+const GOOD = new Set(["win", "battle"]);
 
 /** What's left of a creature at a fight's end: its share of its HP while it's still in the fight, else nothing. */
 export const leftOf = r => (r && r.status === STATUS.STANDING && !r.swayed ? clamp(Number(r.hpFrac) || 0, 0, 1) : 0);
@@ -99,6 +102,17 @@ export const absentOf = (r, rounds) => (r?.fellRound && rounds > 0 ? clamp((roun
 
 /** The Friendly Team's win in a fight's summary. */
 export const friendlyWon = result => result?.outcome === "victory" && (result.winners ?? []).includes(SIDES.FRIENDLY);
+
+/**
+ * The Friendly Team won the battle in a fight's summary: the map cleared (friendlyWon), or every one of `foes` (its
+ * foes who were in the encounter: ids) out of it (any end but standing; one left out of the fight counts as out),
+ * with one of `friends` still on its feet, whoever else on the map is left standing.
+ */
+export function battleWonIn(result, friends, foes) {
+  if ( friendlyWon(result) ) return true;
+  const out = r => !r || !!r.swayed || r.status !== STATUS.STANDING;
+  return foes.length > 0 && foes.every(id => out(result?.units?.[id])) && friends.some(id => !out(result?.units?.[id]));
+}
 
 /**
  * A ledger of the fights, for the shift model and the hints: each creature's weight (its most HP) and team (1 the
@@ -271,15 +285,17 @@ const leanStatus = measures => (measures.some(m => m.lean === "matters") ? "matt
   : measures.every(m => m.lean === "negligible") ? "negligible" : "near");
 
 /**
- * How a test stands, by its measures: the Friendly Team's wins (`win`), one of it going down (`downed`) and, with a
+ * How a test stands, by its measures: the Friendly Team's wins (`win`: the map cleared), its battle won (`battle`,
+ * where anyone is outside the encounter: every foe in it beaten), one of it going down (`downed`) and, with a
  * player's character in the battle, one dying (`death`); its `status`: "matters" (any does), "negligible" (all are),
  * "near" (as many fights as the main run and still not clear), or "open"; `settled`: no more fights would change
  * what's shown. `estimate`, `lo`, `hi`, `raw`: the wins'.
- * @param {{n: number, wins: number, downs: number, deaths: number, sum: number, squares: number}} test   its fights:
- *   how many, won, with one of the Friendly Team down, with a character dead, and the margins' sum and sum of squares
+ * @param {{n: number, wins: number, battles?: number, downs: number, deaths: number, sum: number, squares: number}} test
+ *   its fights: how many, won, battles won, with one of the Friendly Team down, with a character dead, and the
+ *   margins' sum and sum of squares
  * @param {object|null} model   the main run's shift model (ledgerModel), with the same creature left out
- * @param {{runs: number, pWin: number, pDowned: number|null, pDeath: number|null}} base   the main run's fights and
- *   its odds (null: not measured, with nobody to)
+ * @param {{runs: number, pWin: number, pBattle?: number|null, pDowned: number|null, pDeath: number|null}} base   the
+ *   main run's fights and its odds (null: not measured, with nobody to)
  */
 export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z = SWING_Z, least = SWING_MIN_FIGHTS } = {}) {
   const n = test.n;
@@ -288,7 +304,8 @@ export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z
   const other = (p, hits) => (p === null || p === undefined ? null : measured({ n, hits: hits ?? 0 }, p, n0, { threshold, z }));
   const downed = other(base.pDowned, test.downs);
   const death = other(base.pDeath, test.deaths);
-  const both = [win, downed, death].filter(Boolean);
+  const battle = other(base.pBattle, test.battles);
+  const both = [win, battle, downed, death].filter(Boolean);
   let status = "open";
   if ( n >= least ) {
     if ( both.some(m => m.clear === "matters") ) status = "matters";
@@ -299,7 +316,7 @@ export function swingVerdict(test, model, base, { threshold = SWING_THRESHOLD, z
   // clear, within SWING_SETTLED, or as sure as the main run is.)
   const known = m => m.clear === "negligible" || n >= n0 || (m.clear === "matters" && (m.hi - m.lo) / 2 <= SWING_SETTLED);
   const settled = status === "negligible" || status === "near" || (status === "matters" && (n >= n0 || both.every(known)));
-  return { estimate: win.estimate, lo: win.lo, hi: win.hi, raw: win.raw, byMargins: win.byMargins, win, downed, death, status, settled };
+  return { estimate: win.estimate, lo: win.lo, hi: win.hi, raw: win.raw, byMargins: win.byMargins, win, battle, downed, death, status, settled };
 }
 
 /**
@@ -353,8 +370,12 @@ export function createSwingStudy(tests, baseline) {
   const ledger = baseline.ledger ?? null;
   const pcs = Object.values(baseline.combatants ?? {}).filter(c => c.kind === "pc").map(c => c.id);
   const friends = Object.values(baseline.combatants ?? {}).filter(c => c.side === SIDES.FRIENDLY).map(c => c.id);
+  // (The battle won, where anyone is outside the encounter: its foes who were in it beaten. Else it's the wins.)
+  const encounterFoes = Object.values(baseline.combatants ?? {}).filter(c => HOSTILE_GROUPS.includes(c.side) && !c.bystander).map(c => c.id);
+  const outsiders = Object.values(baseline.combatants ?? {}).some(c => c.bystander);
   const base = {
     runs: baseline.runs, pWin: baseline.sides?.[SIDES.FRIENDLY]?.pWin ?? 0,
+    pBattle: outsiders && Number.isFinite(baseline.pBattleWon) ? baseline.pBattleWon : null,
     pDowned: friends.length ? baseline.pAnyFriendDowned ?? null : null, pDeath: pcs.length ? baseline.pAnyPcDead ?? 0 : null
   };
   const undecided = undecidedOf(baseline);
@@ -365,7 +386,7 @@ export function createSwingStudy(tests, baseline) {
     const skip = ledger && t.id ? ledger.ids.indexOf(t.id) : -1;
     return {
       test: t, skip, model: ledger ? ledgerModel(ledger, skip) : null, hint: hints[t.id] ?? null,
-      n: 0, wins: 0, downs: 0, deaths: 0, sum: 0, squares: 0, chunks: 0, inFlight: 0, verdict: null, seen: []
+      n: 0, wins: 0, battles: 0, downs: 0, deaths: 0, sum: 0, squares: 0, chunks: 0, inFlight: 0, verdict: null, seen: []
     };
   });
   const byKey = new Map(state.map(s => [s.test.slot, s]));
@@ -381,13 +402,13 @@ export function createSwingStudy(tests, baseline) {
   };
   const judge = s => {
     const v = swingVerdict(s, s.model, base);
-    const now = [v.win.estimate, v.downed?.estimate ?? 0, v.death?.estimate ?? 0];
+    const now = [v.win.estimate, v.battle?.estimate ?? 0, v.downed?.estimate ?? 0, v.death?.estimate ?? 0];
     s.seen.push([s.n, ...now]);
     // (Steady: it matters, calculated; not clear, called at SWING_LEAN_Z, or near the line and measured on with what
     // time is left.)
     if ( !v.settled && steady(s, now) ) {
       v.steady = true;
-      if ( v.status === "open" ) v.status = leanStatus([v.win, v.downed, v.death].filter(Boolean));
+      if ( v.status === "open" ) v.status = leanStatus([v.win, v.battle, v.downed, v.death].filter(Boolean));
       if ( v.status !== "near" ) v.settled = true;
     }
     s.verdict = v;
@@ -414,6 +435,7 @@ export function createSwingStudy(tests, baseline) {
       for ( const f of fights ) {
         s.n += 1;
         if ( friendlyWon(f) ) s.wins += 1;
+        if ( base.pBattle !== null && battleWonIn(f, friends, encounterFoes) ) s.battles += 1;
         if ( pcDied(f) ) s.deaths += 1;
         if ( friendDowned(f) ) s.downs += 1;
         if ( ledger ) {
@@ -437,7 +459,7 @@ export function createSwingStudy(tests, baseline) {
       const { spec, slot, ...shown } = test;
       const { lead, gain } = leadOf(verdict, undecided);
       return {
-        ...shown, ...verdict, delta: verdict.estimate, lead, gain, runs: s.n, wins: s.wins, downs: s.downs, deaths: s.deaths, hint: s.hint,
+        ...shown, ...verdict, delta: verdict.estimate, lead, gain, runs: s.n, wins: s.wins, battles: s.battles, downs: s.downs, deaths: s.deaths, hint: s.hint,
         pWin: clamp(base.pWin + verdict.estimate, 0, 1), noise: verdict[lead].clear !== "matters"
       };
     }).sort((a, b) => Math.abs(b.gain) - Math.abs(a.gain))

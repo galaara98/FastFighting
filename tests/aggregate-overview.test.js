@@ -55,6 +55,37 @@ describe("the party's lot", () => {
   });
 });
 
+describe("the battle won, beside the map cleared", () => {
+  test("every foe in the encounter beaten with a Friendly standing, whoever else on the map is left", () => {
+    const agg = createAggregator(prep);
+    // (The orc slain, the boss fled; the hermit came from elsewhere and still stands, so no one cleared the map.)
+    agg.add({ outcome: "stalemate", winners: [], rounds: 10, units: { kyra: unit("standing"), valeros: unit("down"), orc: unit("dead"), boss: unit("fled"), hermit: unit("standing") } }, 1);
+    // (The orc still up: not won.)
+    agg.add({ outcome: "stalemate", winners: [], rounds: 10, units: { kyra: unit("standing"), valeros: unit("standing"), orc: unit("standing"), boss: unit("dead"), hermit: unit("standing", { involved: false }) } }, 2);
+    // (The encounter's foes beaten, but the hermit took down the last of the party: not won.)
+    agg.add({ outcome: "victory", winners: ["hostile"], rounds: 7, units: { kyra: unit("down"), valeros: unit("dead"), orc: unit("dead"), boss: unit("dead"), hermit: unit("standing") } }, 3);
+    // (The map cleared: won.)
+    agg.add({ outcome: "victory", winners: ["friendly"], rounds: 8, units: { kyra: unit("standing"), valeros: unit("standing"), orc: unit("dead"), boss: unit("dead"), hermit: unit("dead") } }, 4);
+    const r = agg.finish();
+    expect(r.pBattleWon).toBe(0.5);
+    // (Lost: no Friendly left standing. The second, still undecided.)
+    expect(r.pBattleLost).toBe(0.25);
+    expect(r.sides.friendly.pWin).toBe(0.25);
+  });
+
+  test("no one outside the encounter: won is the map cleared; no party, none", () => {
+    const agg = createAggregator({ ...prep, combatants: prep.combatants.filter(c => c.spec.inEncounter !== false) });
+    agg.add({ outcome: "victory", winners: ["friendly"], rounds: 3, units: { kyra: unit("standing"), valeros: unit("standing"), orc: unit("dead"), boss: unit("dead") } }, 1);
+    agg.add({ outcome: "stalemate", winners: [], rounds: 12, units: { kyra: unit("standing"), valeros: unit("standing"), orc: unit("standing"), boss: unit("dead") } }, 2);
+    const r = agg.finish();
+    expect(r.pBattleWon).toBe(r.sides.friendly.pWin);
+    expect(r.pBattleLost).toBe(0);
+    const foesOnly = createAggregator({ ...prep, combatants: prep.combatants.filter(c => c.spec.side !== "friendly") });
+    foesOnly.add({ outcome: "stalemate", winners: [], rounds: 12, units: { orc: unit("standing") } }, 1);
+    expect(foesOnly.finish().pBattleWon).toBeNull();
+  });
+});
+
 describe("the stakes", () => {
   /** Four fights: the party wins three, one of them costly (Valeros dies); Kyra goes down in the one it loses. */
   function fourFights() {

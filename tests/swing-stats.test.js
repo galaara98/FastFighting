@@ -13,7 +13,7 @@ import { runBatchSync } from "../scripts/engine/simulator.js";
 import { openPool } from "../scripts/engine/batch-pool.js";
 import { batchHost } from "../scripts/engine/batch-worker.js";
 import {
-  createLedger, shiftModel, ledgerModel, swingVerdict, swingPreview, createSwingStudy, resultMargin, leadOf, undecidedOf,
+  createLedger, shiftModel, ledgerModel, swingVerdict, swingPreview, createSwingStudy, resultMargin, leadOf, undecidedOf, battleWonIn,
   SWING_MIN_FIGHTS, SWING_THRESHOLD, UNDECIDED_MOST
 } from "../scripts/engine/swing-stats.js";
 import { goldenBattles } from "./golden/battles.js";
@@ -198,6 +198,27 @@ describe("fights that end with no side beaten", () => {
       expect(r.lead).toBe("win");
       expect(r.gain).toBe(r.delta);
     }
+  });
+
+  test("anyone outside the encounter: the battle won measured too, and it leads where no side is beaten", () => {
+    const baseline = {
+      ...crawl(0.99), pBattleWon: 0.6,
+      combatants: { ...crawl(0.99).combatants, ghoul: { id: "ghoul", side: "hostile", kind: "npc" }, mummy: { id: "mummy", side: "hostile", kind: "npc", bystander: true } }
+    };
+    const study = createSwingStudy([{ id: "rogue", slot: "rogue", label: "rogue", spec: {} }], baseline);
+    // (Without the rogue: the ghoul still up in most fights, so the battle is lost far more often; the mummy never
+    // beaten, so the map is never cleared, as before.)
+    for ( let i = 0; i < 3 * SWING_MIN_FIGHTS; i++ ) {
+      study.heard("rogue", [{ outcome: "stalemate", winners: [], rounds: 10, units: { hero: { status: "standing", hpFrac: 0.5 }, ghoul: { status: i % 4 ? "standing" : "dead" }, mummy: { status: "standing" } } }]);
+    }
+    const [row] = study.rows();
+    expect(row.battles).toBe(3 * SWING_MIN_FIGHTS / 4);
+    expect(row.battle.clear).toBe("matters");
+    expect(row.battle.estimate).toBeLessThan(-0.25);
+    expect(row.lead).toBe("battle");
+    expect(row.gain).toBeCloseTo(row.battle.estimate, 9);
+    expect(battleWonIn({ outcome: "stalemate", units: { hero: { status: "standing" }, ghoul: { status: "dead" }, mummy: { status: "standing" } } }, ["hero"], ["ghoul"])).toBe(true);
+    expect(battleWonIn({ outcome: "stalemate", units: { hero: { status: "down" }, ghoul: { status: "dead" } } }, ["hero"], ["ghoul"])).toBe(false);
   });
 
   test("the lead: the measure that clearly matters most, the wins too; else one going down; no one to go down, the wins", () => {

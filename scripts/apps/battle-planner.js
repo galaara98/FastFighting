@@ -42,7 +42,7 @@ import { blink, keepTyping } from "./blink.js";
 import { readOnly } from "./read-only.js";
 import { inControl } from "../foundry/control.js";
 import { expectedRuns, paceOf, swingBudgetMs, budgetMs, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
-import { swingPreview, SWING_THRESHOLD, UNDECIDED_MOST, undecidedOf } from "../engine/swing-stats.js";
+import { swingPreview, SWING_THRESHOLD } from "../engine/swing-stats.js";
 import { signedNumber } from "../engine/trait-parts.js";
 import { budgetFudges, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
@@ -99,6 +99,9 @@ const swingGuess = (results, tests, seconds) => Math.max(1, Math.round(results.r
 
 /** A change in the Friendly Team's odds, in points: "+4.2%". */
 const swingPoints = d => `${d >= 0 ? "+" : ""}${(d * 100).toFixed(1)}%`;
+
+/** A swing test's changes in the battle won and the map cleared, this close (5 points), shown as one: their average. */
+const SWING_MERGE = 0.05;
 
 /**
  * A range of changes as HTML ("-1.7% – +2.6%", FASTFIGHTING.Swing.Range): each end red or green by its sign, what
@@ -950,8 +953,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const pt = r.party;
     const spent = this.#partySpent(r);
     const swung = this.#swungTiles();
+    // (With creatures outside the encounter: the battle won, every foe in it beaten, beside the map cleared.)
+    const battle = Number.isFinite(r.pBattleWon) && r.pBystandersJoin !== null && r.pBystandersJoin !== undefined;
     const party = [
-      kpi("PartyWins", r.sides.friendly?.pWin ?? 0, prev?.sides?.friendly?.pWin ?? 0, true),
+      ...(battle ? [kpi("BattleWon", r.pBattleWon, prev?.pBattleWon, true, "", true)] : []),
+      kpi(battle ? "MapCleared" : "PartyWins", r.sides.friendly?.pWin ?? 0, prev?.sides?.friendly?.pWin ?? 0, true, "", battle),
       kpi("PcDeath", r.pAnyPcDead, prev?.pAnyPcDead, false, "danger"),
       kpi("PcDowned", r.pAnyPcDowned, prev?.pAnyPcDowned, false, "warn"),
       ...(pt ? [
@@ -1041,7 +1047,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const note = { negligible: "NegligibleNote", near: "NearNote", open: this.running ? "MeasuringNote" : "UnsureNote" }[s.status];
     const hint = [
       note ? localize(`FASTFIGHTING.Swing.${note}`, { threshold }) : null,
-      line("FASTFIGHTING.Swing.WinLine", s.win),
+      s.battle ? line("FASTFIGHTING.Swing.BattleLine", s.battle) : null,
+      line(s.battle ? "FASTFIGHTING.Swing.MapLine" : "FASTFIGHTING.Swing.WinLine", s.win),
       s.downed ? line("FASTFIGHTING.Swing.DownedLine", s.downed) : null,
       s.death ? line("FASTFIGHTING.Swing.DeathLine", s.death) : null,
       localize("FASTFIGHTING.Swing.Fights", { n: s.runs.toLocaleString(game.i18n.lang) })
@@ -1059,6 +1066,27 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       const [lo, hi] = range(shown);
       row.value = localize("FASTFIGHTING.Swing.Range", { lo, hi });
       row.valueHtml = swingRange(shown.leanLo, shown.leanHi, harm);
+    }
+    // (With anyone outside the encounter: two bars half as high, the battle won (light) over the map cleared (dark),
+    // each with its change; the harms beside the name.)
+    if ( s.battle ) {
+      const bar = (m, key) => {
+        const negligible = m.clear === "negligible";
+        const [lo, hi] = range(m);
+        return {
+          key, width: negligible ? 0 : Math.min(50, Math.abs(m.estimate) * 100).toFixed(1), positive: m.estimate >= 0,
+          value: negligible ? loc("FASTFIGHTING.Swing.Negligible") : unsettled ? localize("FASTFIGHTING.Swing.Range", { lo, hi }) : swingPoints(m.estimate),
+          valueHtml: unsettled && !negligible ? swingRange(m.leanLo, m.leanHi) : null
+        };
+      };
+      Object.assign(row, { downed: badge(s.downed), death: badge(s.death), valueIcon: null });
+      // (Within SWING_MERGE of each other: one bar, their average, in the map's colours.)
+      if ( Math.abs(s.battle.estimate - s.win.estimate) <= SWING_MERGE ) {
+        const mid = k => (s.battle[k] + s.win[k]) / 2;
+        const both = { estimate: mid("estimate"), lo: mid("lo"), hi: mid("hi"), leanLo: mid("leanLo"), leanHi: mid("leanHi"), clear: s.battle.clear === "negligible" && s.win.clear === "negligible" ? "negligible" : null };
+        const one = bar(both, "map");
+        Object.assign(row, { width: one.width, positive: one.positive, value: one.value, valueHtml: one.valueHtml, merged: true });
+      } else row.bars = [bar(s.battle, "battle"), bar(s.win, "map")];
     }
     return { ...row, cls };
   }
@@ -1143,6 +1171,34 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     return shares.length ? shares.reduce((a, b) => a + b, 0) / shares.length : null;
   }
 
+  /**
+   * The win bar's two rows, where the Friendly Team has foes in the encounter (aggregate.js pBattleWon), else null:
+   * the battle (every foe in the encounter beaten; lost, no Friendly standing; else undecided) and the map (cleared,
+   * every foe on it beaten; lost as the battle is; else a stalemate), each a row of won, neither and lost, with its
+   * legend.
+   */
+  #winRows(r) {
+    if ( !Number.isFinite(r.pBattleWon) ) return null;
+    const cleared = r.sides.friendly?.pWin ?? 0;
+    const lost = r.pBattleLost ?? 0;
+    const row = (key, won, lost, wonKey, openKey, hint, named = true) => {
+      const open = Math.max(0, 1 - won - lost);
+      const parts = [["won", won, wonKey], ["open", open, openKey], ["lost", lost, "FASTFIGHTING.Results.Bar.lost"]]
+        .map(([cls, p, label]) => ({ cls, p, label: loc(label), pct: pct(p, 1), width: (p * 100).toFixed(2) }));
+      const stats = listItems(parts.filter(s => s.p > 0).map(s => localize("FASTFIGHTING.Words.Value", { label: s.label, value: s.pct })));
+      const legend = named ? localize("FASTFIGHTING.Words.Part", { why: loc(`FASTFIGHTING.Results.Bar.${key}`), n: stats }) : stats;
+      return { key, legend, hint: loc(hint), segments: parts.filter(s => s.p > 0) };
+    };
+    // (Within SWING_MERGE of each other: one row, their average, in the map's colours, its numbers unnamed.)
+    if ( Math.abs(r.pBattleWon - cleared) <= SWING_MERGE ) {
+      return [row("map", (r.pBattleWon + cleared) / 2, lost, "FASTFIGHTING.Results.Bar.won", "FASTFIGHTING.Results.Stalemate", "FASTFIGHTING.Results.BattleAndMapHint", false)];
+    }
+    return [
+      row("battle", r.pBattleWon, lost, "FASTFIGHTING.Results.Bar.won", "FASTFIGHTING.Results.Bar.open", "FASTFIGHTING.Results.BattleWonHint"),
+      row("map", cleared, lost, "FASTFIGHTING.Results.Bar.cleared", "FASTFIGHTING.Results.Stalemate", "FASTFIGHTING.Results.MapClearedHint")
+    ];
+  }
+
   #resultsContext() {
     const r = this.results;
     const spec = this.spec;
@@ -1211,14 +1267,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     const swingTestCount = localize("FASTFIGHTING.Swing.Tests", { n: tests.length });
     const swingMany = tests.length > SWING_MANY ? localize("FASTFIGHTING.Swing.Many", { n: SWING_MANY }) : null;
-    // (Most fights ending with no side beaten: why the list goes by one of the party going down.)
-    const undecided = undecidedOf(r);
-    const swingUndecided = undecided >= UNDECIDED_MOST ? localize("FASTFIGHTING.Swing.Undecided", { pct: pct(undecided) }) : null;
 
     const sample = this.sample ? this.#sampleContext() : null;
 
     // The win bar stays over the tabs; the Overview has the rest, each with its change since the run before (in points).
-    const summary = { label: listItems(segments.map(s => localize("FASTFIGHTING.Words.Value", { label: s.label, value: s.pct }))) };
+    // Where the party has foes in the encounter, two rows half as high: the battle (light: won, undecided, lost) over
+    // the map (dark: cleared, stalemate, lost); else each side's wins.
+    const winRows = this.#winRows(r);
+    const summary = { label: winRows ? winRows.map(w => w.legend).join("; ") : listItems(segments.map(s => localize("FASTFIGHTING.Words.Value", { label: s.label, value: s.pct }))) };
     const overview = this.#overview(r, this.previousResults, combatants);
 
     return {
@@ -1228,6 +1284,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         runs: r.runs,
         seed: r.seed,
         segments,
+        winRows,
         partyWin: pct(r.sides.friendly?.pWin ?? 0, 1),
         pcDeath: pct(r.pAnyPcDead, 1),
         pcDowned: pct(r.pAnyPcDowned, 1),
@@ -1241,7 +1298,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         rounds: r.rounds,
         histogram,
         foes, atRisk, combatants, resources, swing, swingPills, swingTestCount, swingNone: !tests.length, sample,
-        swingHint: localize("FASTFIGHTING.Swing.Hint", { threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }), swingMany, swingUndecided
+        swingHint: localize("FASTFIGHTING.Swing.Hint", { threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }), swingMany
       },
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
       storyStyle: this.storyStyle,

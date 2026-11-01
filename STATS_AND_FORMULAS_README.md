@@ -1861,19 +1861,27 @@ Code: `engine/simulator.js` `runOne`, `battleOver`, `keepsSideIn`; `engine/aggre
 
 ### Odds and outcomes
 
-Search: odds, win chance, Friendlies win, A PC dies, A PC goes down, Stalemate, No one left, Most dangerous, Most at risk, First to fall, HP left
+Search: odds, win chance, Friendlies win, Battle won, Map cleared, win bar, A PC dies, A PC goes down, Stalemate, No one left, Most dangerous, Most at risk, First to fall, HP left
 
 Each figure is the share of simulated fights in which it happened.
 
 | Figure | A fight counts when |
 |---|---|
-| A side wins | it is among the sides still in the fight at the end (a standoff settled by talking a foe into backing off: the side it was settled for) |
+| A side wins (Map cleared) | it is among the sides still in the fight at the end (a standoff settled by talking a foe into backing off: the side it was settled for) |
+| Battle won | the Friendly Team cleared the map, or every one of its foes who was in the encounter is out of it (any end but standing; talked over too) with one of it still on its feet, whoever joined from the rest of the map (`pBattleWon`) |
+| Battle lost | no one of the Friendly Team is left on its feet (`pBattleLost`) |
 | Stalemate | it reached max rounds |
 | No one left | it ended with no side left (an argument whose talks collapsed counts here too) |
 | A PC dies | any player character ends it dead |
 | A PC goes down | any player character dropped to 0 at some point |
 | Foe talked down | anyone was swayed |
 | Settled with words | it ended with no blow struck and the talks didn't collapse |
+
+The win bar, where the Friendly Team has foes in the encounter: two rows half as high, the battle (light: won,
+undecided, lost) over the map (dark: cleared, stalemate, lost, counted as the battle's). Within 5 points of each other
+(`SWING_MERGE`), one row: their average, in the map's colours. Otherwise (no Friendly, or no foe in the encounter),
+each side's wins, a stalemate and no one left. With anyone outside the encounter, the Overview shows **Battle won**
+and **Map cleared** in place of **Friendlies win**.
 
 Per combatant: share of fights it ends standing, down, dead, fled, surrendered and so on; share it was downed; mean
 HP left (as a fraction); mean damage dealt and healing done; share it fell first; mean resources spent. Summoned
@@ -1946,12 +1954,14 @@ the chance of a PC dying, by 2.5 points or more, with as few fights as it takes 
 - Stop (**Stop swing factors** in place of Compute while it runs, or Stop on the top bar): no more fights are handed
   out, and it ends once those out are back (a chunk, about 150 ms); the tests stay as they stood, and aren't kept to
   show again.
+- The battle and the map: with anyone outside the encounter, each test measures the battle won too (a fourth
+  measure, by the wins alone), and its row shows two bars half as high, the battle (light) over the map cleared (dark),
+  each with its change. Within 5 points of each other (`SWING_MERGE`), one bar: their average, in the map's colours.
 - Fights with no side beaten (`UNDECIDED_MOST`): where 50% or more of the main run's fights end in a stalemate (out of
   rounds) or with no one standing, its win chance is near nothing and can't fall, so leaving out any PC looks
   negligible. A dungeon whose far rooms the party never reaches in time does this (a crawl won 0.3% of the time, every
   fight to the 10-round cap). There, each test is shown and sorted by the measure that clearly matters most, the wins
-  too, else a Friendly going down (`leadOf`): its icon and change in the value column, red where it's likelier, and a
-  note above the list says why. The Overview tiles go by tests still shown by the wins only. Better still: an encounter
+  too, else the battle won, else a Friendly going down (`leadOf`): its icon and change in the value column, red where it's likelier. The Overview tiles go by tests still shown by the wins only. Better still: an encounter
   of only the creatures that fight together, so its fights end.
 - Before it runs, from the main run's own fights: where a creature fell early and where it didn't, the margin against how
   much of the fight it missed, through the same model, shown as Likely or Unlikely to move the odds 2.5 points. Its side

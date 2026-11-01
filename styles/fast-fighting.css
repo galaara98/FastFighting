@@ -167,6 +167,17 @@
 .ff-swing-bar span { position: absolute; top: 0; bottom: 0; left: 50%; border-radius: 3px; }
 .ff-swing-bar span.pos { background: var(--ff-friendly); }
 .ff-swing-bar span.neg { background: var(--ff-hostile); transform: translateX(-100%); }
+/* The battle won (light) over the map cleared (dark), each half as high, and their changes stacked. */
+.ff-swing-bars { display: flex; flex-direction: column; gap: 1px; background: none; }
+.ff-swing-bar.ff-swing-bars > .ff-swing-half { position: relative; left: auto; flex: 1; border-radius: 2px; background: var(--ff-surface-2); }
+.ff-swing-half--battle > span.pos { background: color-mix(in srgb, var(--ff-friendly) 55%, white); }
+.ff-swing-half--battle > span.neg { background: color-mix(in srgb, var(--ff-hostile) 55%, white); }
+.ff-swing-half--map > span.pos { background: color-mix(in srgb, var(--ff-friendly) 75%, black); }
+.ff-swing-half--map > span.neg { background: color-mix(in srgb, var(--ff-hostile) 75%, black); }
+.ff-swing-values { display: flex; flex-direction: column; font-size: 10px; line-height: 1.1; }
+/* The two within 5 points of each other: one bar, in the map's colours. */
+.ff-swing-bar--map span.pos { background: color-mix(in srgb, var(--ff-friendly) 75%, black); }
+.ff-swing-bar--map span.neg { background: color-mix(in srgb, var(--ff-hostile) 75%, black); }
 .ff-swing-value { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
 .ff-swing-value.pos { color: var(--ff-friendly); }
 .ff-swing-value.neg, .ff-swing-value .neg { color: var(--ff-hostile); }
@@ -180,7 +191,6 @@
 .ff-filter.ff-swing-pill.is-encounter { --ff-ring: color-mix(in srgb, var(--ff-pill) 55%, white); border-color: var(--ff-ring); box-shadow: 0 0 0 1px var(--ff-ring); }
 .ff-filter.ff-swing-pill.is-all { --ff-ring: color-mix(in srgb, var(--ff-pill) 70%, black); border-color: var(--ff-ring); box-shadow: 0 0 0 1px var(--ff-ring); }
 .ff-swing-count.is-warn { color: var(--ff-attention); }
-.ff-swing-undecided { color: var(--ff-attention); }
 /* A swing test still open, and the main run's estimates before the study. */
 .ff-swing li.is-open .ff-swing-value, .ff-swing li.is-near .ff-swing-value { font-style: italic; opacity: 0.8; }
 .ff-swing li.is-near .ff-swing-bar span { opacity: 0.55; }
@@ -761,6 +771,17 @@ button.ff-team-pick:hover { border-color: var(--ff-line); }
 /* The right pane: the odds pinned over the tabs. */
 .ff-summary { padding: 10px 12px; border-bottom: 1px solid var(--ff-line); }
 .ff-summary .ff-winbar { height: 24px; }
+/* The battle (light) over the map (dark), each half as high: won green, lost red, neither grey. */
+.ff-winbar--rows { flex-direction: column; gap: 1px; }
+.ff-winrow { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.ff-winrow > span { height: 100%; }
+.ff-winrow--battle .is-won { background: color-mix(in srgb, var(--ff-friendly) 55%, white); }
+.ff-winrow--battle .is-lost { background: color-mix(in srgb, var(--ff-hostile) 55%, white); }
+.ff-winrow--battle .is-open { background: color-mix(in srgb, var(--ff-muted) 55%, white); }
+.ff-winrow--map .is-won { background: color-mix(in srgb, var(--ff-friendly) 75%, black); }
+.ff-winrow--map .is-lost { background: color-mix(in srgb, var(--ff-hostile) 75%, black); }
+.ff-winrow--map .is-open { background: color-mix(in srgb, var(--ff-muted) 70%, black); }
+.ff-legend--rows { flex-direction: column; gap: 2px; }
 .ff-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; color: var(--ff-text-dim); font-size: var(--ff-text-sm); }
 .ff-legend > span { display: inline-flex; align-items: center; gap: 6px; }
 /* The Overview: the party, the foes, the fight, each a card of numbers. */
