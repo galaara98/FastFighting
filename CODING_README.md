@@ -669,7 +669,7 @@ Hooks:
 
 ## Engine behavior in detail
 
-[README.md](README.md#how-creatures-decide) gives the table's view of each behavior. This section adds the detail the engine works by.
+[docs/guide.md](docs/guide.md#how-creatures-decide) gives the table's view of each behavior. This section adds the detail the engine works by.
 
 ### The planner and the plan
 
