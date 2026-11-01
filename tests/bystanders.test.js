@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { runBatchSync, replay } from "../scripts/engine/simulator.js";
 import { pf2eRules } from "./fixtures/three-action-rules.js";
 import { creature, battle } from "./helpers.js";
-import { soundDC } from "../scripts/engine/behavior/senses.js";
+import { soundDC, dampenNotice } from "../scripts/engine/behavior/senses.js";
 
 const at = (x, y) => ({ x, y, size: 5 });
 
@@ -149,5 +149,34 @@ describe("aware of the conflict", () => {
       expect(r.log.filter(e => e.actor === "guard" && e.type === "attack").every(e => e.target === "foe")).toBe(true);
     }
     expect(watched).toBeGreaterThan(5);
+  });
+});
+
+describe("the GM's dampener on noticing a fight from afar (options.remoteNotice)", () => {
+  const involved = (remoteNotice, cue) => {
+    const spec = scene(cue);
+    spec.options.remoteNotice = remoteNotice;
+    return runBatchSync(spec, pf2eRules, { runs: 300, seed: 3 }).combatants.guard.pInvolved;
+  };
+
+  test("a faint din: noticed more often at -50, less at 50; nothing to make out, never", () => {
+    const [eager, usual, deaf] = [-50, 0, 50].map(v => involved(v, { hearDC: 30 }));
+    expect(eager).toBeGreaterThan(usual);
+    expect(usual).toBeGreaterThan(deaf);
+    expect(involved(-50, {})).toBe(0);
+  });
+
+  test("at -50 a failed check gets a second; at 50 a made one holds one time in three; at 0 the check alone", () => {
+    const run = v => ({ prep: { options: { remoteNotice: v } }, rng: { chance: p => p >= 0.99 || p < 0.34 && p > 0.33 } });
+    let again = 0;
+    expect(dampenNotice(run(-50), false, () => { again += 1; return true; })).toBe(true);
+    expect(again).toBe(1);
+    const asked = [];
+    const spy = v => ({ prep: { options: { remoteNotice: v } }, rng: { chance: p => { asked.push(p); return false; } } });
+    expect(dampenNotice(spy(50), true, () => true)).toBe(false);
+    expect(asked[0]).toBeCloseTo(1 / 3, 9);
+    expect(dampenNotice(spy(0), true, () => false)).toBe(true);
+    expect(dampenNotice(spy(0), false, () => true)).toBe(false);
+    expect(asked).toHaveLength(1);
   });
 });

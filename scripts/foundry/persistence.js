@@ -40,6 +40,7 @@ export function defaultSetup() {
       opening: setting("opening"),
       standoffNoncombat: setting("standoffNoncombat"),
       bystanders: setting("bystanders"),
+      remoteNotice: setting("remoteNotice"),
       surprise: setting("surpriseDefault"),
       includeHidden: setting("includeHidden"),
       includeOtherLevels: setting("includeOtherLevels"),

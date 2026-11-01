@@ -45,6 +45,9 @@ const SETTINGS = {
   includeHidden: { group: "planner", type: Boolean, default: true },
   includeOtherLevels: { group: "planner", type: Boolean, default: false },
   bystanders: { group: "planner", type: Boolean, default: true },
+  // How hard it is for creatures outside the encounter that could make out a fight to notice it (-50 to 50: at -50
+  // twice as often, at 50 a third; behavior/senses.js dampenNotice). A new encounter's plan starts from it.
+  remoteNotice: { group: "planner", type: Number, default: 0, range: { min: -50, max: 50, step: 5 } },
   neutralDefault: { group: "planner", type: String, default: ALLEGIANCE.NEUTRAL, choices: choices(Object.values(ALLEGIANCE), "Lean") },
   // (Read when the planner opens, to propose friend groups for neutrals: a world setting, not per plan.)
   neutralReach: { group: "planner", type: Number, default: NEUTRAL_REACH, range: { min: 1, max: 20, step: 1 } },

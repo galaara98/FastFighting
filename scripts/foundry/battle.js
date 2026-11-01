@@ -805,6 +805,8 @@ export function buildBattleSpec(roster, setup, { approach = null } = {}) {
       opening: options.opening ?? "auto",
       // (The GM's lean toward a standoff at the start: the plan's, else the setting's. behavior/standoff.js.)
       standoffNoncombat: clamp(Number(options.standoffNoncombat ?? setting("standoffNoncombat")) || 0, -50, 50),
+      // (The GM's dampener on noticing a fight from outside it: the plan's, else the setting's. behavior/senses.js.)
+      remoteNotice: clamp(Number(options.remoteNotice ?? setting("remoteNotice")) || 0, -50, 50),
       // The luck checks that protect player characters (world settings, as sliders).
       concedeLuck: setting("concedeLuck"),
       theftLuck: setting("theftLuck"),

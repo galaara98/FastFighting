@@ -2656,6 +2656,11 @@ Decides when a token on the map but not in the encounter notices the fight.
 - A leader whose own people are fighting, and who can make out the fight at all (any cue above): +5 to the check, and
   the cue no harder than DC 12. Out of sight and earshot (behind more walls than its system lets sound through, too
   far), it notices nothing, its own people's fight too, until someone comes for it.
+- **Remote fight dampener** (−50 to 50, 0 by default; the setting, and the planner's slider for one battle;
+  `options.remoteNotice`, `behavior/senses.js` `dampenNotice`): for one that has a cue and makes its check (above), and
+  a patrol listening for a fight. Below 0, a failed check gets a second one, at −50 every time (about twice as likely
+  where it's unlikely); above 0, a made check holds only 1 ÷ (1 + 2 × v ÷ 50) of the time (at 50, one in three). It
+  never gives a cue: a creature that can't make the fight out still notices nothing.
 - Noticed, it joins next round; attacked, at once. Someone fleeing within 40 ft alerts it. A creature running for help
   calls a friend once within 30 ft.
 

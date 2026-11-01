@@ -160,6 +160,8 @@ export function prepareBattle(spec, rules) {
     opening: "auto",
     // (The GM's lean toward opening with a standoff, -50 to 50: behavior/standoff.js noncombatLean.)
     standoffNoncombat: 0,
+    // (The GM's dampener on noticing a fight from outside it, -50 to 50: behavior/senses.js dampenNotice.)
+    remoteNotice: 0,
     aftermath: "tell",
     ...spec.options
   };

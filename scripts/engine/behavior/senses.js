@@ -73,6 +73,21 @@ export function sensesOf(run, u) {
  */
 export const HEAR = Object.freeze({ baseDC: 8, perFeet: 15, perWall: 6, maxFeet: 300, talk: 10 });
 
+/** The GM's dampener on noticing a fight from outside it (options.remoteNotice): at -50, twice as often; at 50, a third. */
+export const REMOTE_NOTICE = Object.freeze({ most: 50, boost: 1, damp: 2 });
+
+/**
+ * A creature that could make out a fight (seen, heard, smelled, felt) and tried, as the GM's dampener has it
+ * (options.remoteNotice, -50 to 50; 0, its check alone): `made`, its check. Below 0, a failed check gets `again()` (a
+ * second check) so often (at -50 every time: about twice as likely, where it's unlikely); above, a made one holds
+ * only so often (at 50, one in three).
+ */
+export function dampenNotice(run, made, again) {
+  const v = Math.max(-REMOTE_NOTICE.most, Math.min(REMOTE_NOTICE.most, Number(run.prep.options.remoteNotice) || 0)) / REMOTE_NOTICE.most;
+  if ( made ) return v > 0 ? run.rng.chance(1 / (1 + REMOTE_NOTICE.damp * v)) : true;
+  return v < 0 && run.rng.chance(-v * REMOTE_NOTICE.boost) ? !!again() : false;
+}
+
 /**
  * The DC to hear a sound so far off, through so many walls that stop sound: the din of a fight, or (`talk`) raised
  * voices with no blow struck. The system's own (rules.hearDC, API 32: null where it can't be heard), else HEAR's

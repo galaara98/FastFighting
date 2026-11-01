@@ -49,7 +49,7 @@ import { STATUS, ADHD, clamp } from "../../constants.js";
 import { isStanding, alliesOf, edgeDistance, approach, canMove, checkRoll, systemRolled, typical, inArea, areEnemies } from "../battle-state.js";
 import { patrolStyle } from "../playstyles.js";
 import { isAnimalistic } from "./animal.js";
-import { perceives, knowsOf, hearDC, sensesOf, hiddenFrom } from "./senses.js";
+import { perceives, knowsOf, hearDC, sensesOf, hiddenFrom, dampenNotice } from "./senses.js";
 import { seemsFoe } from "./neutral.js";
 import { holdsOf } from "./holds.js";
 import { isLeaving } from "./leaving.js";
@@ -163,8 +163,9 @@ function noiseCue(run, u) {
   if ( !best ) return null;
   const perception = u.spec.perception ?? u.spec.initiative?.mod ?? 0;
   const check = checkRoll(run, u, perception, null, { purpose: "notice", skill: "perception", sense: "sound" });
-  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.dc, { advantage: check.advantage, kind: "check", roller: u, quiet: true });
-  return roll.degree >= 2 ? { kind: "noise", unit: best.unit, dc: best.dc } : null;
+  const tries = () => rollCheck(run.prep.rules, run.rng, check.mod, best.dc, { advantage: check.advantage, kind: "check", roller: u, quiet: true }).degree >= 2;
+  // (As the GM's dampener on noticing a fight from afar has it: senses.js dampenNotice.)
+  return dampenNotice(run, tries(), tries) ? { kind: "noise", unit: best.unit, dc: best.dc } : null;
 }
 
 /** A foe one of its teammates has in view (the nearest to u): where the fight is, as they'd show it. Null for none. */

@@ -154,6 +154,10 @@
         "Name": "Bystanders can join",
         "Hint": "Tokens outside the encounter may notice the fight and join it."
       },
+      "remoteNotice": {
+        "Name": "Remote fight dampener",
+        "Hint": "How hard it is for creatures outside the encounter to notice a fight they could see, hear or smell. New encounters start from this."
+      },
       "genericFallback": {
         "Name": "Use the experimental generic adapter",
         "Hint": "Guesses HP, AC, attacks and damage from the data paths below. Expect rough results."
@@ -591,6 +595,7 @@
       "IgnoreLanguages": "Ignore languages",
       "IgnoreLanguagesHint": "Anyone who speaks a language understands everyone who does.",
       "Bystanders": "Bystanders",
+      "RemoteNotice": "Remote fight dampener",
       "BystandersHint": "Tokens not in the encounter may notice it and join from the next round.",
       "Stopped": "Stopped after {n} simulated fights.",
       "SceneChanged": "You're viewing a different scene now. Run the battle again for this scene.",

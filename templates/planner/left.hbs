@@ -118,6 +118,9 @@
       <div class="ff-section-body ff-checks">
         <label class="ff-check" data-tooltip="{{localize "FASTFIGHTING.Planner.BystandersHint"}}"><input type="checkbox" name="options.bystanders" {{checked options.bystanders}}> {{localize "FASTFIGHTING.Planner.Bystanders"}}</label>
         <label class="ff-check"><input type="checkbox" name="options.includeHidden" {{checked options.includeHidden}}> {{localize "FASTFIGHTING.Planner.Hidden"}}</label>
+        <label class="ff-field ff-slider"><span class="ff-field-label">{{localize "FASTFIGHTING.Planner.RemoteNotice"}} <button type="button" class="ff-help" data-tooltip="{{localize "FASTFIGHTING.Settings.remoteNotice.Hint"}}" aria-label="{{localize "FASTFIGHTING.Settings.remoteNotice.Hint"}}"><i class="fa-solid fa-question"></i></button></span>
+          <span class="ff-slider-control"><input type="range" name="options.remoteNotice" value="{{options.remoteNotice}}" min="-50" max="50" step="5" data-dtype="Number"> <output class="ff-slider-value">{{options.remoteNotice}}</output></span>
+        </label>
       </div>
     </details>
     {{#if live}}

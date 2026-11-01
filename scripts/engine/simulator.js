@@ -41,7 +41,7 @@ import { opensWithTalk, breaksStandoff, standoffPitches, charismaticLeader, canT
 import { controlOutcome, controlRoll, isImmune, degreeShift } from "./behavior/control.js";
 import { recompute as recomputeConditions, applyOutcome, renewHolds, beginConcentration, endConcentration, holdsAnything, noteConcentration, moveHeld, settleAllegiance, iwrOf, incoming, spendEdges, spendBoost, focusOf, tauntProof, withoutTaunt, armEffects } from "./behavior/effects.js";
 import { decideBuff, aidScores, checkDc } from "./behavior/support.js";
-import { perceives, noteSeen, soundDC, HEAR } from "./behavior/senses.js";
+import { perceives, noteSeen, soundDC, HEAR, dampenNotice } from "./behavior/senses.js";
 import { isAnimalistic, animalTactics } from "./behavior/animal.js";
 import { stealChance, theftTarget, theftPlan, attemptTheft, robbable, lootable, leftRemains } from "./behavior/theft.js";
 import { fallenWishes, decideFallen, bind, rob, stayBound, takesPrisoners, robsTheFallen, freeFriend, rollOf } from "./behavior/fallen.js";
@@ -427,8 +427,9 @@ export function lookAround(run, b) {
   const perception = (b.spec.perception ?? b.spec.initiative?.mod ?? 0) + (kin ? KIN_BONUS : 0);
   const check = checkRoll(run, b, perception, null, { purpose: "notice", skill: "perception", sense: best.cue.sense });
   // (FastFighting's own reckoning of who notices the fight, not a roll the table makes: never shown.)
-  const roll = rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b, quiet: true });
-  if ( roll.degree >= 2 ) notice(run, b, best.cue.sense, best.c);
+  const tries = () => rollCheck(run.prep.rules, run.rng, check.mod, best.cue.dc, { advantage: check.advantage, kind: "check", roller: b, quiet: true }).degree >= 2;
+  // (As the GM's dampener on noticing a fight from afar has it: senses.js dampenNotice.)
+  if ( dampenNotice(run, tries(), tries) ) notice(run, b, best.cue.sense, best.c);
   return false;
 }
 
