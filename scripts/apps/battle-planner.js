@@ -558,9 +558,10 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       hasAdapter: !!adapter,
       counts: this.roster.length ? game.i18n.format("FASTFIGHTING.Planner.Counts", { creatures: this.roster.filter(included).length, teams: teamCount }) : "",
       running: this.running,
+      swingRunning: !!this.swingRunning,
       progress: Math.round(this.progress * 100),
       // (The fights run: by tens while a run goes, then how many there were.)
-      fightCount: this.abort && Number.isFinite(this.counted) ? fightCount(this.counted) : (this.results && !this.stale ? fightCount(this.results.runs) : null),
+      fightCount: this.abort && !this.swingRunning && Number.isFinite(this.counted) ? fightCount(this.counted) : (this.results && !this.stale ? fightCount(this.results.runs) : null),
       // (While the swing study runs: its fights so far, of all its tests'.)
       swingCount: this.swingCount ? swingCount(this.swingCount) : null,
       stale: this.stale && !!this.results,
@@ -2027,6 +2028,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     const scope = this.#swingScope();
     this.swingCount = { done: 0, total: swingGuess(this.results, swingTests(this.spec, this.results, scope).tests.length, predictionSeconds(this.setup)) };
     this.swing = null;
+    // (Stop, here or on the top bar: the tests as they stand, not kept.)
+    this.abort = new AbortController();
+    this.swingRunning = true;
     await this.render();
     let lastPaint = 0;
     let lastRows = 0;
@@ -2035,6 +2039,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
       this.swing = await swingFactors(this.spec, this.results, {
         seconds: predictionSeconds(this.setup),
         scope,
+        signal: this.abort.signal,
         // (Each test as it stands, shown as it goes: the list redrawn twice a second at most.)
         onUpdate: rows => {
           this.swing = rows;
@@ -2059,11 +2064,14 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         }
       });
       // (Worked out to the end: kept with the run they're for, to show again when the planner opens on it.)
-      rememberSwing(this.holderUuid, signature, this.swing);
+      if ( this.abort.signal.aborted ) ui.notifications.info("FASTFIGHTING.Swing.Stopped", { format: { n: this.swingCount?.done ?? 0 } });
+      else rememberSwing(this.holderUuid, signature, this.swing);
     } catch ( err ) {
       reportError(err);
     } finally {
       this.swingCount = null;
+      this.abort = null;
+      this.swingRunning = false;
       this.#doneRunning();
     }
   }

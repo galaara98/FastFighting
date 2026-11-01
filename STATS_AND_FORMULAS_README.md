@@ -1943,6 +1943,9 @@ the chance of a PC dying, by 2.5 points or more, with as few fights as it takes 
   it's 2.5 points or more (red where it's likelier); each tooltip with every measure, how far each could be, and from
   how many fights. The bar and the Run button fill by its time, and a chip beside the fight count shows its fights so
   far of about how many there will be (at its pace so far; at first, the main run's).
+- Stop (**Stop swing factors** in place of Compute while it runs, or Stop on the top bar): no more fights are handed
+  out, and it ends once those out are back (a chunk, about 150 ms); the tests stay as they stood, and aren't kept to
+  show again.
 - Fights with no side beaten (`UNDECIDED_MOST`): where 50% or more of the main run's fights end in a stalemate (out of
   rounds) or with no one standing, its win chance is near nothing and can't fall, so leaving out any PC looks
   negligible. A dungeon whose far rooms the party never reaches in time does this (a crawl won 0.3% of the time, every

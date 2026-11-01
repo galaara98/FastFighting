@@ -1121,10 +1121,11 @@ export function swingTests(spec, baseline, scope = {}) {
  * test's fights handed out a chunk at a time to the one that needs them most (the pool's stream), until every test is
  * settled or the study's time is up (swingBudgetMs: six predictions' time for twelve tests). `onUpdate(rows)` as each
  * chunk comes back: every test as it stands. `onProgress(fraction, done, total)`: how far along by its time, the fights
- * done so far, and about how many there will be (at the pace so far; at first, the run's).
+ * done so far, and about how many there will be (at the pace so far; at first, the run's). Stopped (`signal`): no more
+ * fights handed out, and it ends once those out are back (a chunk's time at most), each test as it stands then.
  * @returns {Promise<object[]>} each test as it ended (createSwingStudy rows), sorted by impact
  */
-export async function swingFactors(spec, baseline, { seconds = null, onProgress, onUpdate, scope = {} } = {}) {
+export async function swingFactors(spec, baseline, { seconds = null, onProgress, onUpdate, scope = {}, signal = null } = {}) {
   const adapter = getAdapter();
   const { tests } = swingTests(spec, baseline, scope);
   const time = seconds ?? setting("predictionTime");
@@ -1139,7 +1140,7 @@ export async function swingFactors(spec, baseline, { seconds = null, onProgress,
     await pool.stream(adapter.rules, {
       deadline,
       seed: 99,
-      pick: () => study.pick(),
+      pick: () => (signal?.aborted ? null : study.pick()),
       heard: (key, fights) => {
         study.heard(key, fights);
         const spent = clock() - start;

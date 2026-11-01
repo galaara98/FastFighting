@@ -851,6 +851,8 @@
       "NoPositioning": "Without terrain & positioning",
       "Hint": "Click a pill to change who's tested. Each number is the change without that creature or rule: the bar, Friendlies winning; the broken heart, one going down; the skull, a PC dying.",
       "Compute": "Compute swing factors",
+      "Stop": "Stop swing factors",
+      "Stopped": "Swing factors stopped after {n} fights: the tests as they stood, not kept.",
       "Scope": {
         "friendly": "Friendlies",
         "foes": "Foes",

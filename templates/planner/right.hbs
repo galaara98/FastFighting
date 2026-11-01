@@ -107,7 +107,11 @@
           {{#each results.swingPills}}<button type="button" class="ff-filter ff-swing-pill ff-swing-pill--{{id}} {{ring}} {{#if active}}active{{/if}}" data-action="swingScope" data-scope="{{id}}" aria-pressed="{{#if active}}true{{else}}false{{/if}}" data-tooltip-text="{{hint}}" aria-label="{{hint}}" {{#if @root.running}}disabled{{/if}}>{{label}}{{#if count}} <span class="ff-count">{{count}}</span>{{/if}}</button>{{/each}}
         </div>
         <span class="ff-swing-count {{#if results.swingMany}}is-warn{{/if}}" {{#if results.swingMany}}data-tooltip-text="{{results.swingMany}}"{{/if}}>{{#if results.swingMany}}<i class="fa-solid fa-hourglass-half" aria-hidden="true"></i> {{/if}}{{results.swingTestCount}}</span>
+        {{#if @root.swingRunning}}
+        <button type="button" class="ff-btn" data-action="cancel"><i class="fa-solid fa-stop" aria-hidden="true"></i> {{localize "FASTFIGHTING.Swing.Stop"}}</button>
+        {{else}}
         <button type="button" class="ff-btn" data-action="swing" {{#if running}}disabled{{/if}}{{#if results.swingNone}}disabled{{/if}}><i class="fa-solid fa-scale-unbalanced" aria-hidden="true"></i> {{localize "FASTFIGHTING.Swing.Compute"}}</button>
+        {{/if}}
       </div>
       {{#if results.swing}}
       <ul class="ff-swing">
