@@ -1060,19 +1060,28 @@ export const SWING_MANY = 35;
 /** What a swing study can test, by pill: the party's side, its foes, those who take no side, the rules. */
 export const SWING_SCOPES = Object.freeze(["friendly", "foes", "neutrals", "rules"]);
 
+/** The pills that are only on (every one of them on the map) or off: the foes and those who take no side. */
+const SWING_ALL_OR_NONE = new Set(["foes", "neutrals"]);
+
 /**
- * A pill's state (scope: the GM's choices, swingTests): a side's creatures in the encounter ("encounter", the
- * default), all of them on the map ("all"), or none (false); the rules on (true) or off (false).
+ * A pill's state (scope: the GM's choices, swingTests): the Friendlies in the encounter ("encounter", the default),
+ * all of them on the map ("all"), or none (false); the foes and those who take no side, all of them on the map ("all",
+ * the default; one kept from before as the encounter's too) or none; the rules on (true) or off (false).
  */
 export function swingScopeState(scope, key) {
   const v = scope?.[key];
   if ( key === "rules" ) return v !== false;
+  if ( SWING_ALL_OR_NONE.has(key) ) return v === false ? false : "all";
   return v === false ? false : v === "all" ? "all" : "encounter";
 }
 
-/** The state a pill goes to when it's clicked: in the encounter, all on the map, none, and round again. */
+/**
+ * The state a pill goes to when it's clicked: the Friendlies' in the encounter, all on the map, none, and round
+ * again; the foes' and those who take no side's, all and none; the rules', on and off.
+ */
 export function nextSwingState(key, state) {
   if ( key === "rules" ) return !state;
+  if ( SWING_ALL_OR_NONE.has(key) ) return state ? false : "all";
   return state === "encounter" ? "all" : state === "all" ? false : "encounter";
 }
 

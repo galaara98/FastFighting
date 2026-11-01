@@ -1911,9 +1911,10 @@ Search: swing factors, Compute swing factors, what moves the odds, Without, impa
 Shows whether each combatant and each rule moves the Friendly Team's win chance, the chance of one of it going down, or
 the chance of a PC dying, by 2.5 points or more, with as few fights as it takes to tell.
 
-- What to test: a pill each for the Friendly Team's side, its foes and those who take no side, each clicked round
-  through its creatures in the encounter (a light ring, the default), all of them on the map (a dark ring), and none (no
-  ring); and the rules, on or off. The GM's choice is kept in their browser for every battle.
+- What to test: a pill each for the Friendly Team's side, its foes and those who take no side, and the rules. The
+  Friendly Team's is clicked round through its creatures in the encounter (a light ring, the default), all of them on
+  the map (a dark ring), and none (no ring); the foes' and those who take no side's are on (every one of them on the map,
+  the default) or off; the rules', on or off. The GM's choice is kept in their browser for every battle.
 - Tests: the battle without each creature from the pills chosen (those that did most in the main run first: damage
   plus healing, then level, then max HP; never one that took part in under 1 fight in 10), and with Leadership, Morale,
   and Terrain & positioning each turned off (only those that are on). Over 35 tests, the count is shown as a warning.

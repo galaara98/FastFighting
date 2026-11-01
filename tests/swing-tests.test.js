@@ -41,7 +41,8 @@ describe("swingTests", () => {
 
   test("a pill off: its tests aren't run", () => {
     const { tests } = swingTests(spec, baseline, { friendly: false, rules: false });
-    expect(tests.map(t => t.scope)).toEqual(["foes", "foes", "neutrals"]);
+    // (The foes: every one on the map, the lurker outside the encounter too.)
+    expect(tests.map(t => t.scope)).toEqual(["foes", "foes", "foes", "neutrals"]);
   });
 
   test("each test leaves its creature out, or turns its rule off", () => {
@@ -52,15 +53,18 @@ describe("swingTests", () => {
     expect(kyra[0].make(spec).combatants.map(c => c.id)).not.toContain(kyra[0].id);
   });
 
-  test("a side's creatures in the encounter by default; all of them on the map; or none", () => {
+  test("the foes and neutrals: every one on the map, or none; the Friendlies: the encounter's, all, or none", () => {
     const ids = scope => swingTests(spec, baseline, { rules: false, ...scope }).tests.map(t => t.id);
-    expect(ids({})).not.toContain("lurker");
-    expect(ids({ foes: "all" })).toContain("lurker");
+    expect(ids({})).toContain("lurker");
+    expect(ids({ foes: "encounter" })).toContain("lurker");
     expect(ids({ foes: false })).toEqual(["valeros", "kyra", "hermit"]);
-    // (Round and round: in the encounter, all on the map, none; the rules on and off.)
-    expect(swingScopeState({}, "foes")).toBe("encounter");
-    expect(swingScopeState({ foes: true }, "foes")).toBe("encounter");
-    expect(["encounter", "all", false].map(s => nextSwingState("foes", s))).toEqual(["all", false, "encounter"]);
+    // (On and off: the foes and neutrals all of theirs, one kept from before as the encounter's too; the Friendlies
+    // round and round; the rules on and off.)
+    expect([swingScopeState({}, "foes"), swingScopeState({ foes: "encounter" }, "foes"), swingScopeState({ neutrals: false }, "neutrals")]).toEqual(["all", "all", false]);
+    expect(["all", false].map(s => nextSwingState("foes", s))).toEqual([false, "all"]);
+    expect(nextSwingState("neutrals", "all")).toBe(false);
+    expect(swingScopeState({}, "friendly")).toBe("encounter");
+    expect(["encounter", "all", false].map(s => nextSwingState("friendly", s))).toEqual(["all", false, "encounter"]);
     expect([swingScopeState({}, "rules"), nextSwingState("rules", true), nextSwingState("rules", false)]).toEqual([true, false, true]);
   });
 
