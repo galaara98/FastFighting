@@ -2642,7 +2642,9 @@ Decides when a token on the map but not in the encounter notices the fight.
 - A hazard is no cue: a trap lying in wait makes no din, and it's no one's people in the fight.
 - In a standoff, sound from someone near whom no blow was struck this round or last is only raised voices: the
   system's DC for talk, else +10.
-- A leader whose own people are fighting: +5 to the check, and a DC 12 cue even out of sight and earshot.
+- A leader whose own people are fighting, and who can make out the fight at all (any cue above): +5 to the check, and
+  the cue no harder than DC 12. Out of sight and earshot (behind more walls than its system lets sound through, too
+  far), it notices nothing, its own people's fight too, until someone comes for it.
 - Noticed, it joins next round; attacked, at once. Someone fleeing within 40 ft alerts it. A creature running for help
   calls a friend once within 30 ft.
 

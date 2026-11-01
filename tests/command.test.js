@@ -178,18 +178,23 @@ describe("a group's own people", () => {
     expect(called).toBeGreaterThan(0);
   });
 
-  test("word reaches a leader whose people are in the fight, out of sight and earshot; not one who leads no one", () => {
-    const noticed = command => {
+  test("a leader who can just make out its people's fight knows it for theirs; out of sight and earshot, nothing", () => {
+    const noticed = (command, awareness) => {
       let n = 0;
       for ( let seed = 1; seed <= 12; seed++ ) {
         const s = spec([goblin("chief", { name: "Chief", inEncounter: false }), goblin("grunt", { name: "Grunt", hp: { value: 500, max: 500 } }), hero("pc", { hp: { value: 300, max: 300 } })],
-          command, { chief: {} }); // (a grunt that never loses, so never runs for help)
+          command, awareness); // (a grunt that never loses, so never runs for help)
         if ( replay(s, pf2eRules, seed).log.some(e => e.type === "notice" && e.actorId === "chief") ) n += 1;
       }
       return n;
     };
-    expect(noticed({ hostile: chain(["chief", "leader"]) })).toBeGreaterThan(0);
-    expect(noticed({})).toBe(0);
+    const leads = { hostile: chain(["chief", "leader"]) };
+    // (Barely in earshot: a din it would hardly notice alone.)
+    const faint = { chief: { grunt: { hearDC: 40 }, pc: { hearDC: 40 } } };
+    expect(noticed(leads, faint)).toBeGreaterThan(0);
+    expect(noticed({}, faint)).toBe(0);
+    // (Behind more walls than sound gets through: a catacomb's far room.)
+    expect(noticed(leads, { chief: {} })).toBe(0);
   });
 
   test("one who takes no side, leading its people, takes up their quarrel (as its loyalty says)", () => {

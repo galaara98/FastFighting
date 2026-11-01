@@ -270,8 +270,9 @@ export function notice(run, b, cause, source) {
 }
 
 /**
- * A group's leaders and its people. Word reaches a leader whose own people are in the fight: it notices it the more
- * readily (KIN_BONUS on its check), and even out of sight and earshot (as a cue as hard to miss as KIN_DC). One who
+ * A group's leaders and its people. A leader who can make out a fight its own people are in (seen, heard through the
+ * walls, smelled: any cue at all) knows it for theirs: it notices it the more readily (KIN_BONUS on its check, and the
+ * cue no harder than KIN_DC). Out of sight and earshot, it knows nothing of it, unless one comes for it. One who
  * takes no side takes up its people's quarrel, now and then (KIN_QUARREL, its loyalty raising it). And a leader in the
  * fight calls in its people who aren't: they hear, and come.
  */
@@ -418,10 +419,11 @@ export function lookAround(run, b) {
     const cue = noticeCue(run, b, c);
     if ( cue && (!best || cue.dc < best.cue.dc) ) best = { cue, c };
   }
-  // A leader whose own people are in the fight hears of it, even out of sight and earshot, and looks the harder.
-  const kin = leadsGroup(run, b) ? kinInFight(run, b) : null;
-  if ( kin && (!best || best.cue.dc > KIN_DC) ) best = { cue: { dc: KIN_DC, sense: "help" }, c: kin };
+  // (Nothing to make out: out of sight and earshot, a leader too.)
   if ( !best ) return false;
+  // A leader who makes out a fight its own people are in knows it for theirs, and looks the harder.
+  const kin = leadsGroup(run, b) ? kinInFight(run, b) : null;
+  if ( kin && best.cue.dc > KIN_DC ) best = { cue: { dc: KIN_DC, sense: "help" }, c: kin };
   const perception = (b.spec.perception ?? b.spec.initiative?.mod ?? 0) + (kin ? KIN_BONUS : 0);
   const check = checkRoll(run, b, perception, null, { purpose: "notice", skill: "perception", sense: best.cue.sense });
   // (FastFighting's own reckoning of who notices the fight, not a roll the table makes: never shown.)
