@@ -1129,7 +1129,8 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     const ally = found.filter(s => s.scope === "friendly" && s.delta < 0).sort((a, b) => a.delta - b.delta)[0];
     const foe = found.filter(s => s.scope === "foes" && s.delta > 0).sort((a, b) => b.delta - a.delta)[0];
-    const rule = found.filter(s => s.scope === "rules" && Math.abs(s.delta) >= 0.1).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
+    // (A rule turned off; not the dampener moved, which is no rule the fight hinges on.)
+    const rule = found.filter(s => s.scope === "rules" && s.key !== "remoteNotice" && Math.abs(s.delta) >= 0.1).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))[0];
     return {
       linchpin: ally ? tile("Linchpin", ally, { name: nameOf(ally) }, "danger") : null,
       target: foe ? tile("KeyTarget", foe, { name: nameOf(foe) }, "") : null,

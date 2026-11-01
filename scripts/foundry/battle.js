@@ -1090,6 +1090,12 @@ export function nextSwingState(key, state) {
 /** The rules a swing study turns off, one at a time, and what each test is called. */
 const SWING_RULES = [["leadership", "FASTFIGHTING.Swing.NoLeadership"], ["morale", "FASTFIGHTING.Swing.NoMorale"], ["positioning", "FASTFIGHTING.Swing.NoPositioning"]];
 
+/**
+ * The Remote fight dampener's tests (the rules pill, with anyone outside the encounter to notice the fight): the
+ * GM's value moved by each of these, kept within -50 to 50 (none that comes back to the GM's own).
+ */
+const SWING_DAMPENER = Object.freeze([-20, -10, 10, 20]);
+
 /** Which pill a creature comes under (SWING_SCOPES), by its side. */
 const swingScopeOf = c => (c.side === SIDES.FRIENDLY ? "friendly" : HOSTILE_GROUPS.includes(c.side) ? "foes" : "neutrals");
 
@@ -1111,7 +1117,11 @@ export function swingTests(spec, baseline, scope = {}) {
     if ( c.inEncounter !== false ) n.encounter += 1;
   }
   const rules = SWING_RULES.filter(([key]) => spec.options[key]);
-  counts.rules = rules.length;
+  // (The dampener moved either way from the GM's own, where anyone outside the encounter could notice the fight.)
+  const damped = clamp(Number(spec.options.remoteNotice) || 0, -50, 50);
+  const outsiders = spec.combatants.some(c => c.inEncounter === false && !c.hazard);
+  const dampers = outsiders ? [...new Set(SWING_DAMPENER.map(d => clamp(damped + d, -50, 50)))].filter(v => v !== damped) : [];
+  counts.rules = rules.length + dampers.length;
   const chosen = candidates.filter(c => {
     const state = swingScopeState(scope, swingScopeOf(c));
     return state === "all" || (state === "encounter" && c.inEncounter !== false);
@@ -1122,6 +1132,13 @@ export function swingTests(spec, baseline, scope = {}) {
   }));
   if ( swingScopeState(scope, "rules") ) {
     for ( const [key, label] of rules ) tests.push({ scope: "rules", label: game.i18n.localize(label), key, make: s => ({ ...s, options: { ...s.options, [key]: false } }) });
+    const signed = n => `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n)}`;
+    for ( const v of dampers ) {
+      tests.push({
+        scope: "rules", key: "remoteNotice", value: v, label: game.i18n.format("FASTFIGHTING.Swing.Dampener", { change: signed(v - damped) }),
+        make: s => ({ ...s, options: { ...s.options, remoteNotice: v } })
+      });
+    }
   }
   return { tests, counts };
 }
@@ -1141,7 +1158,7 @@ export async function swingFactors(spec, baseline, { seconds = null, onProgress,
   const { tests } = swingTests(spec, baseline, scope);
   const time = seconds ?? setting("predictionTime");
   const budget = swingBudgetMs(tests.length, time);
-  const study = createSwingStudy(tests.map(t => ({ ...t, slot: t.id ?? `rule:${t.key}`, spec: t.make(spec), make: undefined })), baseline);
+  const study = createSwingStudy(tests.map(t => ({ ...t, slot: t.id ?? `rule:${t.key}${t.value === undefined ? "" : `:${t.value}`}`, spec: t.make(spec), make: undefined })), baseline);
   const start = clock();
   const deadline = start + budget;
   // (At first, the run's own pace: so many fights in the prediction's time.)

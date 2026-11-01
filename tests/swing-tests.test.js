@@ -31,7 +31,7 @@ describe("swingTests", () => {
   test("counts each pill's tests: creatures by side, rules switched on", () => {
     expect(SWING_SCOPES).toEqual(["friendly", "foes", "neutrals", "rules"]);
     expect(swingTests(spec, baseline).counts).toEqual({
-      friendly: { encounter: 2, all: 2 }, foes: { encounter: 2, all: 3 }, neutrals: { encounter: 1, all: 1 }, rules: 2
+      friendly: { encounter: 2, all: 2 }, foes: { encounter: 2, all: 3 }, neutrals: { encounter: 1, all: 1 }, rules: 6
     });
   });
 
@@ -47,7 +47,7 @@ describe("swingTests", () => {
 
   test("each test leaves its creature out, or turns its rule off", () => {
     const { tests } = swingTests(spec, baseline, { foes: false, neutrals: false, friendly: false });
-    expect(tests.map(t => t.key)).toEqual(["leadership", "morale"]);
+    expect(tests.map(t => t.key).slice(0, 2)).toEqual(["leadership", "morale"]);
     expect(tests[1].make(spec).options.morale).toBe(false);
     const { tests: kyra } = swingTests(spec, baseline, { foes: false, neutrals: false, rules: false });
     expect(kyra[0].make(spec).combatants.map(c => c.id)).not.toContain(kyra[0].id);
@@ -74,5 +74,18 @@ describe("swingTests", () => {
     expect(ids).toHaveLength(40);
     expect(ids[0]).toBe("foe39");
     expect(ids.at(-1)).toBe("foe0");
+  });
+
+  test("the rules pill moves the remote fight dampener 10 and 20 either way from the GM's, where anyone is outside the encounter", () => {
+    const rules = (options, scope = {}) => swingTests({ ...spec, options: { ...spec.options, ...options } }, baseline, { friendly: false, foes: false, neutrals: false, ...scope }).tests.filter(t => t.key === "remoteNotice");
+    expect(rules({ remoteNotice: 15 }).map(t => t.value)).toEqual([-5, 5, 25, 35]);
+    expect(rules({ remoteNotice: 15 })[2].make(spec).options.remoteNotice).toBe(25);
+    // (Kept within -50 to 50, none back at the GM's own.)
+    expect(rules({ remoteNotice: 45 }).map(t => t.value)).toEqual([25, 35, 50]);
+    expect(rules({ remoteNotice: 50 }).map(t => t.value)).toEqual([30, 40]);
+    // (The rules pill off: none; no one outside the encounter: none.)
+    expect(rules({ remoteNotice: 0 }, { rules: false })).toEqual([]);
+    const inside = { ...spec, combatants: spec.combatants.filter(c => c.inEncounter !== false) };
+    expect(swingTests(inside, baseline, { friendly: false, foes: false, neutrals: false }).tests.filter(t => t.key === "remoteNotice")).toEqual([]);
   });
 });

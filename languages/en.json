@@ -867,6 +867,7 @@
       "NoLeadership": "Without leadership",
       "NoMorale": "Without morale",
       "NoPositioning": "Without terrain & positioning",
+      "Dampener": "Remote fight dampener {change}",
       "Hint": "Click a pill to change who's tested. Each number is the change without that creature or rule: the bar, Friendlies winning (with creatures outside the encounter, two: the battle above, the map below); the broken heart, one going down; the skull, a PC dying.",
       "Compute": "Compute swing factors",
       "Stop": "Stop swing factors",
@@ -882,7 +883,7 @@
         "friendly": { "encounter": "Friendlies in the encounter", "all": "All Friendlies on the map", "off": "No Friendlies" },
         "foes": { "encounter": "Foes in the encounter", "all": "All foes on the map", "off": "No foes" },
         "neutrals": { "encounter": "Neutrals in the encounter", "all": "All neutrals on the map", "off": "No neutrals" },
-        "rules": { "on": "Each rule turned off in turn", "off": "No rules" }
+        "rules": { "on": "Each rule turned off in turn, and the remote fight dampener moved either way", "off": "No rules" }
       },
       "Many": "Over {n} tests: the study takes longer, and each test gets fewer fights.",
       "Tests": "{n} tests",
