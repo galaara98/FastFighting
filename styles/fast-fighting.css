@@ -180,6 +180,7 @@
 .ff-filter.ff-swing-pill.is-encounter { --ff-ring: color-mix(in srgb, var(--ff-pill) 55%, white); border-color: var(--ff-ring); box-shadow: 0 0 0 1px var(--ff-ring); }
 .ff-filter.ff-swing-pill.is-all { --ff-ring: color-mix(in srgb, var(--ff-pill) 70%, black); border-color: var(--ff-ring); box-shadow: 0 0 0 1px var(--ff-ring); }
 .ff-swing-count.is-warn { color: var(--ff-attention); }
+.ff-swing-undecided { color: var(--ff-attention); }
 /* A swing test still open, and the main run's estimates before the study. */
 .ff-swing li.is-open .ff-swing-value, .ff-swing li.is-near .ff-swing-value { font-style: italic; opacity: 0.8; }
 .ff-swing li.is-near .ff-swing-bar span { opacity: 0.55; }

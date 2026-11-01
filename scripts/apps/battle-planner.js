@@ -42,7 +42,7 @@ import { blink, keepTyping } from "./blink.js";
 import { readOnly } from "./read-only.js";
 import { inControl } from "../foundry/control.js";
 import { expectedRuns, paceOf, swingBudgetMs, budgetMs, ROUGH_RUNS, PREDICTION_SECONDS } from "../engine/run-budget.js";
-import { swingPreview, SWING_THRESHOLD } from "../engine/swing-stats.js";
+import { swingPreview, SWING_THRESHOLD, UNDECIDED_MOST, undecidedOf } from "../engine/swing-stats.js";
 import { signedNumber } from "../engine/trait-parts.js";
 import { budgetFudges, traitTotal, TRAIT_BUDGET } from "../engine/trait-budget.js";
 
@@ -104,8 +104,9 @@ const swingPoints = d => `${d >= 0 ? "+" : ""}${(d * 100).toFixed(1)}%`;
  * A range of changes as HTML ("-1.7% – +2.6%", FASTFIGHTING.Swing.Range): each end red or green by its sign, what
  * stands between them the colour of the second.
  */
-function swingRange(lo, hi) {
-  const tone = d => (d >= 0 ? "pos" : "neg");
+function swingRange(lo, hi, harm = false) {
+  // (A harm, one going down or a death: likelier is red.)
+  const tone = d => ((harm ? -d : d) >= 0 ? "pos" : "neg");
   const said = localize("FASTFIGHTING.Swing.Range", { lo: "\u0001", hi: "\u0002" });
   const a = said.indexOf("\u0001");
   const b = said.indexOf("\u0002");
@@ -1017,13 +1018,18 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   /**
-   * A swing test as the list shows it: its change in the Friendly Team's odds and what that means, by its status (it
-   * matters; negligible, under SWING_THRESHOLD either way; one that won't settle, near the line or not settled in time,
-   * as its likely range, at SWING_LEAN_Z, here and in its tooltip; still measuring); the change in one of the Friendly Team going down, and in a character dying, beside it where
-   * that's SWING_THRESHOLD or more; and in its tooltip, each measure's change and how far it could be, from how many
-   * fights.
+   * A swing test as the list shows it: its change in the measure it's shown by (swing-stats.js leadOf: the Friendly
+   * Team's odds; where most fights end with no side beaten, one of it going down or a character dying, with that one's
+   * icon) and what that means, by its status (it matters; negligible, under SWING_THRESHOLD either way; one that won't
+   * settle, near the line or not settled in time, as its likely range, at SWING_LEAN_Z, here and in its tooltip; still
+   * measuring); the change in the other harms beside it where that's SWING_THRESHOLD or more; and in its tooltip, each
+   * measure's change and how far it could be, from how many fights. A row saved before the lead (its odds) as before.
    */
   #swingRow(s) {
+    const lead = s.lead ?? "win";
+    const shown = s[lead] ?? s.win;
+    const gain = s.gain ?? s.delta;
+    const harm = lead !== "win";
     const threshold = (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang);
     const unsettled = s.status === "near" || (s.status === "open" && !this.running);
     const range = m => (unsettled ? [m.leanLo, m.leanHi] : [m.lo, m.hi]).map(swingPoints);
@@ -1042,15 +1048,16 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     // (Beside its name, where it moves SWING_THRESHOLD or more: red where it's likelier.)
     const badge = m => (m && (m.clear === "matters" || Math.abs(m.estimate) >= SWING_THRESHOLD) ? { value: swingPoints(m.estimate), cls: m.estimate > 0 ? "neg" : "pos" } : null);
     const row = {
-      label: s.label, width: Math.min(50, Math.abs(s.delta) * 100).toFixed(1), positive: s.delta >= 0, value: swingPoints(s.delta), hint,
-      downed: badge(s.downed), death: badge(s.death)
+      label: s.label, width: Math.min(50, Math.abs(gain) * 100).toFixed(1), positive: gain >= 0, value: swingPoints(shown.estimate), hint,
+      valueIcon: { downed: "fa-heart-crack", death: "fa-skull" }[lead] ?? null,
+      downed: lead === "downed" ? null : badge(s.downed), death: lead === "death" ? null : badge(s.death)
     };
-    if ( s.win.clear === "negligible" ) Object.assign(row, { width: 0, value: loc("FASTFIGHTING.Swing.Negligible") });
+    if ( shown.clear === "negligible" ) Object.assign(row, { width: 0, value: loc("FASTFIGHTING.Swing.Negligible"), valueIcon: null });
     const cls = { negligible: "is-noise", near: "is-near", open: "is-open" }[s.status] ?? "";
     if ( unsettled ) {
-      const [lo, hi] = range(s.win);
+      const [lo, hi] = range(shown);
       row.value = localize("FASTFIGHTING.Swing.Range", { lo, hi });
-      row.valueHtml = swingRange(s.win.leanLo, s.win.leanHi);
+      row.valueHtml = swingRange(shown.leanLo, shown.leanHi, harm);
     }
     return { ...row, cls };
   }
@@ -1080,10 +1087,11 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
   /**
    * What Swing factors measured, as Overview tiles (none until it has run, and none for a change within its noise): the
    * linchpin (the ally whose absence costs the party most), the key target (the foe whose absence helps it most), and
-   * the rule the fight hinges on (10 points or more either way).
+   * the rule the fight hinges on (10 points or more either way); by the odds alone (a test shown by another measure,
+   * swing-stats.js leadOf, gives none).
    */
   #swungTiles() {
-    const found = (this.swing ?? []).filter(s => !s.noise);
+    const found = (this.swing ?? []).filter(s => !s.noise && (s.lead ?? "win") === "win");
     const nameOf = s => this.spec?.combatants?.find(c => c.id === s.id)?.name ?? s.label;
     const points = d => `${d > 0 ? "+" : "−"}${Math.abs(Math.round(d * 100))}`;
     const tile = (key, s, data, cls) => ({
@@ -1202,6 +1210,9 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
     });
     const swingTestCount = localize("FASTFIGHTING.Swing.Tests", { n: tests.length });
     const swingMany = tests.length > SWING_MANY ? localize("FASTFIGHTING.Swing.Many", { n: SWING_MANY }) : null;
+    // (Most fights ending with no side beaten: why the list goes by one of the party going down.)
+    const undecided = undecidedOf(r);
+    const swingUndecided = undecided >= UNDECIDED_MOST ? localize("FASTFIGHTING.Swing.Undecided", { pct: pct(undecided) }) : null;
 
     const sample = this.sample ? this.#sampleContext() : null;
 
@@ -1229,7 +1240,7 @@ export class BattlePlanner extends HandlebarsApplicationMixin(ApplicationV2) {
         rounds: r.rounds,
         histogram,
         foes, atRisk, combatants, resources, swing, swingPills, swingTestCount, swingNone: !tests.length, sample,
-        swingHint: localize("FASTFIGHTING.Swing.Hint", { threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }), swingMany
+        swingHint: localize("FASTFIGHTING.Swing.Hint", { threshold: (SWING_THRESHOLD * 100).toLocaleString(game.i18n.lang) }), swingMany, swingUndecided
       },
       storyStyles: Object.fromEntries(STORY_STYLES.map(k => [k, `FASTFIGHTING.Story.Style.${k}`])),
       storyStyle: this.storyStyle,

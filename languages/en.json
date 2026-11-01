@@ -865,6 +865,7 @@
         "rules": { "on": "Each rule turned off in turn", "off": "No rules" }
       },
       "Many": "Over {n} tests: the study takes longer, and each test gets fewer fights.",
+      "Undecided": "{pct} of fights end with no side beaten, so the odds of winning barely move. Each change is in a Friendly going down (or a PC dying, where that moves more).",
       "Tests": "{n} tests",
       "Negligible": "Negligible",
       "NegligibleNote": "Under {threshold} points either way.",

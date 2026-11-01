@@ -5,6 +5,7 @@
  *  - a test is negligible when the margins say the odds can't move 2.5 points, even with no wins to go by; it matters
  *    when they or the wins say they do; and odds stay between 0 and 1 (a party winning 1% loses 1 point at most);
  *  - the study gives each test its first fights, then the open ones, and stops asking once all are settled;
+ *  - where most fights end with no side beaten, a test is shown (and sorted) by one of the party going down, not wins;
  *  - the stream hands chunks to whichever worker is free, a battle's spec to each worker once, here without workers.
  */
 import { describe, expect, test } from "vitest";
@@ -12,7 +13,8 @@ import { runBatchSync } from "../scripts/engine/simulator.js";
 import { openPool } from "../scripts/engine/batch-pool.js";
 import { batchHost } from "../scripts/engine/batch-worker.js";
 import {
-  createLedger, shiftModel, ledgerModel, swingVerdict, swingPreview, createSwingStudy, resultMargin, SWING_MIN_FIGHTS, SWING_THRESHOLD
+  createLedger, shiftModel, ledgerModel, swingVerdict, swingPreview, createSwingStudy, resultMargin, leadOf, undecidedOf,
+  SWING_MIN_FIGHTS, SWING_THRESHOLD, UNDECIDED_MOST
 } from "../scripts/engine/swing-stats.js";
 import { goldenBattles } from "./golden/battles.js";
 
@@ -158,6 +160,52 @@ describe("PC deaths, and near the line", () => {
     expect(row.steady).toBe(true);
     expect(row.settled).toBe(false);
     expect(study.pick().key).toBe("a");
+  });
+});
+
+describe("fights that end with no side beaten", () => {
+  // (A dungeon crawl: the party never reaches the far rooms in time, so it almost never wins, and leaving out a PC
+  // can't lower odds near nothing; it does make one of the party going down far likelier.)
+  const crawl = (pStalemate) => ({
+    runs: 300, pStalemate, sides: { friendly: { pWin: 0.003 } }, pAnyFriendDowned: 0.2, pAnyPcDead: 0,
+    combatants: { hero: { id: "hero", side: "friendly", kind: "pc" }, rogue: { id: "rogue", side: "friendly", kind: "pc" } }
+  });
+  const withoutRogue = study => {
+    for ( let i = 0; i < 3 * SWING_MIN_FIGHTS; i++ ) {
+      study.heard("rogue", [{ outcome: "stalemate", winners: [], rounds: 10, units: { hero: { status: "standing", hpFrac: 0.3, wasDowned: i % 3 !== 0 } } }]);
+      study.heard("ghoul", [{ outcome: "stalemate", winners: [], rounds: 10, units: { hero: { status: "standing", hpFrac: 0.9, wasDowned: i % 5 === 0 } } }]);
+    }
+    return study.rows();
+  };
+  const tests = ["rogue", "ghoul"].map(id => ({ id, slot: id, label: id, spec: {} }));
+
+  test("most of them: a PC is shown by one of the party going down, as a cost, and sorted by it", () => {
+    const rows = withoutRogue(createSwingStudy(tests, crawl(0.99)));
+    const rogue = rows.find(r => r.id === "rogue");
+    expect(undecidedOf({ pStalemate: 0.99, pNone: 0.01 })).toBeCloseTo(1, 9);
+    expect(rogue.lead).toBe("downed");
+    expect(rogue.downed.clear).toBe("matters");
+    expect(rogue.gain).toBeCloseTo(-rogue.downed.estimate, 9);
+    expect(rogue.gain).toBeLessThan(-0.25);
+    expect(Math.abs(rogue.delta)).toBeLessThan(0.01);
+    expect(rogue.noise).toBe(false);
+    expect(rows[0].id).toBe("rogue");
+  });
+
+  test("few of them: still by the wins, as before", () => {
+    const rows = withoutRogue(createSwingStudy(tests, crawl(UNDECIDED_MOST / 2)));
+    for ( const r of rows ) {
+      expect(r.lead).toBe("win");
+      expect(r.gain).toBe(r.delta);
+    }
+  });
+
+  test("the lead: the measure that clearly matters most, the wins too; else one going down; no one to go down, the wins", () => {
+    const m = (estimate, clear = null) => ({ estimate, clear });
+    expect(leadOf({ win: m(0.3, "matters"), downed: m(-0.1, "matters"), death: null }, 1)).toEqual({ lead: "win", gain: 0.3 });
+    expect(leadOf({ win: m(0), downed: m(0.05), death: m(0.2, "matters") }, 1)).toEqual({ lead: "death", gain: -0.2 });
+    expect(leadOf({ win: m(0), downed: m(0.01), death: null }, 1).lead).toBe("downed");
+    expect(leadOf({ win: m(0.01), downed: null, death: null }, 1).lead).toBe("win");
   });
 });
 

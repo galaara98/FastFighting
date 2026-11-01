@@ -25,6 +25,10 @@
  *    and still isn't clear (no more fights could make it surer than the main run's own odds are); else open. One that
  *    has settled but isn't clear is called at SWING_LEAN_Z instead (+9 points, from -1 to +19 at SWING_Z: it matters);
  *    only one still not clear there (-5 points, give or take 4) is near the line.
+ *  - What a test is shown by (leadOf): its change in the wins; but where most of the main run's fights end with no side
+ *    beaten (UNDECIDED_MOST: a dungeon whose far rooms the party never reaches in time), odds near nothing can't fall,
+ *    and leaving out any PC looks like nothing: then by the measure that clearly matters most, else one of the Friendly
+ *    Team going down. The rows are sorted by it.
  *  - The study (createSwingStudy): every test gets SWING_MIN_FIGHTS first (those the main run hints matter most first),
  *    then the open ones get the fights, the fewest first; then those that matter until known within SWING_SETTLED;
  *    then, with the time left, those near the line. A test whose changes have held within SWING_STEADY of where they
@@ -62,6 +66,30 @@ export const SWING_STEADY = 0.02;
 export const LOPSIDED = 0.1;
 /** The main run's fights kept for the shift model and the hints (the first so many: each fight is like any other). */
 export const LEDGER_MOST = 4000;
+/**
+ * From this share of the main run's fights ending with no side beaten (out of rounds, or no one left), its odds of
+ * winning are too near nothing to move: a test is shown by another measure (leadOf).
+ */
+export const UNDECIDED_MOST = 0.5;
+
+/** The share of a run's fights no side won: stalemates (out of rounds), and none left standing. */
+export const undecidedOf = results => clamp((Number(results?.pStalemate) || 0) + (Number(results?.pNone) || 0), 0, 1);
+
+/**
+ * The measure a test is shown by, `lead` ("win", "downed" or "death"), and its change for the Friendly Team, `gain`
+ * (better for it positive: one going down, or a character dying, turned round). The wins; but where most of the main
+ * run's fights end with no side beaten (UNDECIDED_MOST: leaving out a PC can't lower odds near nothing), the measure
+ * that clearly matters most, the wins too, else one of the Friendly Team going down.
+ */
+export function leadOf(verdict, undecided) {
+  const measures = { win: verdict.win, downed: verdict.downed, death: verdict.death };
+  let lead = "win";
+  if ( undecided >= UNDECIDED_MOST ) {
+    const clear = Object.entries(measures).filter(([, m]) => m?.clear === "matters").sort(([, a], [, b]) => Math.abs(b.estimate) - Math.abs(a.estimate));
+    lead = clear[0]?.[0] ?? (measures.downed ? "downed" : "win");
+  }
+  return { lead, gain: lead === "win" ? measures.win.estimate : -measures[lead].estimate };
+}
 
 /** What's left of a creature at a fight's end: its share of its HP while it's still in the fight, else nothing. */
 export const leftOf = r => (r && r.status === STATUS.STANDING && !r.swayed ? clamp(Number(r.hpFrac) || 0, 0, 1) : 0);
@@ -329,6 +357,7 @@ export function createSwingStudy(tests, baseline) {
     runs: baseline.runs, pWin: baseline.sides?.[SIDES.FRIENDLY]?.pWin ?? 0,
     pDowned: friends.length ? baseline.pAnyFriendDowned ?? null : null, pDeath: pcs.length ? baseline.pAnyPcDead ?? 0 : null
   };
+  const undecided = undecidedOf(baseline);
   const pcDied = f => pcs.some(id => f.units?.[id]?.status === STATUS.DEAD);
   const friendDowned = f => friends.some(id => f.units?.[id]?.wasDowned);
   const hints = swingPreview(ledger, tests.filter(t => t.id).map(t => t.id));
@@ -406,10 +435,11 @@ export function createSwingStudy(tests, baseline) {
     rows: () => state.map(s => {
       const { test, verdict } = s;
       const { spec, slot, ...shown } = test;
+      const { lead, gain } = leadOf(verdict, undecided);
       return {
-        ...shown, ...verdict, delta: verdict.estimate, runs: s.n, wins: s.wins, downs: s.downs, deaths: s.deaths, hint: s.hint,
-        pWin: clamp(base.pWin + verdict.estimate, 0, 1), noise: verdict.win.clear !== "matters"
+        ...shown, ...verdict, delta: verdict.estimate, lead, gain, runs: s.n, wins: s.wins, downs: s.downs, deaths: s.deaths, hint: s.hint,
+        pWin: clamp(base.pWin + verdict.estimate, 0, 1), noise: verdict[lead].clear !== "matters"
       };
-    }).sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    }).sort((a, b) => Math.abs(b.gain) - Math.abs(a.gain))
   };
 }

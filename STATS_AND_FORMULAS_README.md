@@ -1898,7 +1898,7 @@ Code: `engine/aggregate.js` `finish`; `foundry/battle.js` `typicalFight`; `engin
 
 ### Swing factors
 
-Search: swing factors, Compute swing factors, what moves the odds, Without, impact, negligible, near the line, 2.5 points, PC dies, margin, shift model, Likely, Unlikely, linchpin, key target, hinges on, What to test, swingBudgetMs
+Search: swing factors, Compute swing factors, what moves the odds, Without, impact, negligible, near the line, 2.5 points, PC dies, margin, shift model, Likely, Unlikely, linchpin, key target, hinges on, What to test, swingBudgetMs, stalemate, no side beaten, UNDECIDED_MOST, leadOf
 
 Shows whether each combatant and each rule moves the Friendly Team's win chance, the chance of one of it going down, or
 the chance of a PC dying, by 2.5 points or more, with as few fights as it takes to tell.
@@ -1943,6 +1943,13 @@ the chance of a PC dying, by 2.5 points or more, with as few fights as it takes 
   it's 2.5 points or more (red where it's likelier); each tooltip with every measure, how far each could be, and from
   how many fights. The bar and the Run button fill by its time, and a chip beside the fight count shows its fights so
   far of about how many there will be (at its pace so far; at first, the main run's).
+- Fights with no side beaten (`UNDECIDED_MOST`): where 50% or more of the main run's fights end in a stalemate (out of
+  rounds) or with no one standing, its win chance is near nothing and can't fall, so leaving out any PC looks
+  negligible. A dungeon whose far rooms the party never reaches in time does this (a crawl won 0.3% of the time, every
+  fight to the 10-round cap). There, each test is shown and sorted by the measure that clearly matters most, the wins
+  too, else a Friendly going down (`leadOf`): its icon and change in the value column, red where it's likelier, and a
+  note above the list says why. The Overview tiles go by tests still shown by the wins only. Better still: an encounter
+  of only the creatures that fight together, so its fights end.
 - Before it runs, from the main run's own fights: where a creature fell early and where it didn't, the margin against how
   much of the fight it missed, through the same model, shown as Likely or Unlikely to move the odds 2.5 points. Its side
   going badly is often why it fell, so this overstates, by far (a fighter's 75 points against 14 measured): it gives no
